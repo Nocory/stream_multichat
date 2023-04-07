@@ -1,0 +1,24 @@
+{
+  "name": "stream_multichat",
+  "private": true,
+  "scripts": {
+    "build": "nuxt build",
+    "dev": "nuxt dev",
+    "generate": "nuxt generate",
+    "preview": "nuxt preview",
+    "postinstall": "nuxt prepare"
+  },
+  "devDependencies": {
+    "@nuxtjs/eslint-config-typescript": "^12.0.0",
+    "@nuxtjs/eslint-module": "^4.0.2",
+    "@nuxtjs/tailwindcss": "^6.6.5",
+    "@typescript-eslint/eslint-plugin": "^5.57.1",
+    "@typescript-eslint/parser": "^5.57.1",
+    "eslint": "^8.37.0",
+    "eslint-plugin-vue": "^9.10.0",
+    "nuxt": "^3.3.3"
+  },
+  "dependencies": {
+    "@vueuse/core": "^9.13.0"
+  }
+}
