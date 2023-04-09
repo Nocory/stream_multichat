@@ -12,6 +12,7 @@
     "@nuxtjs/eslint-config-typescript": "^12.0.0",
     "@nuxtjs/eslint-module": "^4.0.2",
     "@nuxtjs/tailwindcss": "^6.6.5",
+    "@types/tmi.js": "^1.8.3",
     "@typescript-eslint/eslint-plugin": "^5.57.1",
     "@typescript-eslint/parser": "^5.57.1",
     "eslint": "^8.37.0",
@@ -19,6 +20,7 @@
     "nuxt": "^3.3.3"
   },
   "dependencies": {
-    "@vueuse/core": "^9.13.0"
+    "@vueuse/core": "^9.13.0",
+    "tmi.js": "^1.8.5"
   }
 }

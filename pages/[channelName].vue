@@ -38,9 +38,16 @@
 const route = useRoute()
 
 const kickChat = useKickChat(route.params.channelName as string)
-// useTwitchChat
+const twitchChat = useTwitchChat(route.params.channelName as string)
 // useYoutubeChat
-const combinedChat = computed(() => kickChat.value.filter(chatMessage => !chatMessage.isDeleted))
+const combinedChat = computed(() => {
+  const res = [
+    ...kickChat.value,
+    ...twitchChat.value,
+  ].filter(chatMessage => !chatMessage.isDeleted)
+  res.sort((a, b) => a.created_at - b.created_at)
+  return res
+})
 </script>
 
 <style>

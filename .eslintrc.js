@@ -40,6 +40,8 @@ module.exports = {
     "no-undef-init": "error",
     "no-unneeded-ternary": "error",
     "no-unused-expressions": "error",
+    "no-unused-vars": "off",
+    "@typescript-eslint/no-unused-vars": "warn",
     "no-useless-concat": "error",
     "no-useless-return": "error",
     "no-var": "error",

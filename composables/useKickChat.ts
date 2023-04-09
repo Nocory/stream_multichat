@@ -1,16 +1,16 @@
 import { useWebSocket } from "@vueuse/core"
 import { ChatMessage, MessagePart } from "~/types/common"
 
-const splitKickMessage = (msg: string): MessagePart[] => {
+const splitKickMessage = (msg: string) => {
   const emoteRegex = /(\[emote:\d+:[^\]]*\])/
   const emojiRegex = /(\[emoji:\w+\])/
   const combinedRegex = new RegExp(`${emoteRegex.source}|${emojiRegex.source}`)
 
   const parts = msg.split(combinedRegex).filter(part => part !== "" && part !== undefined)
-  console.log(msg)
-  console.log(parts)
+  // console.log(msg)
+  // console.log(parts)
 
-  return parts.map(el => {
+  return parts.map<MessagePart>(el => {
     if (emoteRegex.test(el)) {
       const emote = el.match(/:(\w+):/)![1]
       return ({
@@ -34,6 +34,9 @@ export default function(channelName: string): Ref<ChatMessage[]> {
 
   const handleConnected = async (socket: WebSocket) => {
     const apiResponse = await fetch(`https://kick.com/api/v2/channels/${channelName}/`)
+    if (!apiResponse.ok) {
+      throw new Error("Fetching of Kick channel information failed. Response was not OK")
+    }
     const parsedApiResponse = await apiResponse.json()
 
     socket.send(JSON.stringify({
@@ -64,7 +67,7 @@ export default function(channelName: string): Ref<ChatMessage[]> {
           ...chatMessages.value.slice(-49),
           {
             id: parsedData.message.id,
-            created_at: parsedData.message.created_at,
+            created_at: Date.now(),
             platform: "kick",
             userName: parsedData.user.username,
             messageParts: splitKickMessage(parsedData.message.message),
@@ -105,7 +108,7 @@ export default function(channelName: string): Ref<ChatMessage[]> {
       }
     },
     onDisconnected: () => console.log("Websocket disconnected"),
-    autoReconnect: { delay: 1000 },
+    autoReconnect: { delay: 5000 },
   })
 
   return chatMessages
