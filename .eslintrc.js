@@ -41,7 +41,7 @@ module.exports = {
     "no-unneeded-ternary": "error",
     "no-unused-expressions": "error",
     "no-unused-vars": "off",
-    "@typescript-eslint/no-unused-vars": "warn",
+    "@typescript-eslint/no-unused-vars": "off",
     "no-useless-concat": "error",
     "no-useless-return": "error",
     "no-var": "error",
