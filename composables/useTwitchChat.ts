@@ -74,14 +74,34 @@ export default function(channelName: string) {
   })
 
   client.on("message", (channel, tags, message, self) => {
+    //
+  })
+
+  client.on("chat", (channel, userstate, message, self) => {
+    console.log("TWITCH CHAT", userstate.username, message)
     chatMessages.value = [
       ...chatMessages.value.slice(-49),
       {
-        id: tags.id ?? "unknown",
+        id: userstate.id ?? "unknown",
         created_at: Date.now(),
         platform: "twitch",
-        userName: tags?.username ?? "unknown",
-        messageParts: splitTwitchMessage(message, tags.emotes ?? {}),
+        userName: userstate.username ?? "unknown",
+        messageParts: splitTwitchMessage(message, userstate.emotes ?? {}),
+        isDeleted: false,
+      }
+    ]
+  })
+
+  client.on("cheer", (channel, userstate, message) => {
+    console.log("TWITCH CHEER", userstate.username, message)
+    chatMessages.value = [
+      ...chatMessages.value.slice(-49),
+      {
+        id: userstate.id ?? "unknown",
+        created_at: Date.now(),
+        platform: "twitch",
+        userName: userstate.username ?? "unknown",
+        messageParts: splitTwitchMessage(message, userstate.emotes ?? {}),
         isDeleted: false,
       }
     ]
@@ -128,10 +148,7 @@ export default function(channelName: string) {
   })
 
   client.on("raw_message", (message, tags) => {
-    // console.log("TWITCH RAW", {
-    //   message,
-    //   tags
-    // })
+    //
   })
 
   onScopeDispose(() => {
