@@ -1,5 +1,5 @@
 <template>
-  <div class="h-screen overflow-hidden">
+  <div class="multichat h-screen overflow-hidden">
     <TransitionGroup
       name="list"
       tag="div"
@@ -8,11 +8,12 @@
       <div
         v-for="chatMessage in combinedChat"
         :key="chatMessage.id"
-        class="py-1"
+        :data-platform="chatMessage.platform"
+        class="multichat-message py-1"
       >
-        <img class="h-5 inline" :src="`/platforms/${chatMessage.platform}.png`">
+        <img class="multichat-message__platform h-5 inline" :src="`/platforms/${chatMessage.platform}.png`">
         <span
-          class="font-bold px-1"
+          class="multichat-message__user font-bold px-1"
           v-text="chatMessage.userName + ':'"
         />
         <template
@@ -21,11 +22,12 @@
         >
           <span
             v-if="messagePart.type === 'text'"
+            class="multichat-message__text"
             v-text="messagePart.value"
           />
           <img
             v-else-if="messagePart.type === 'image'"
-            class="h-5 inline"
+            class="multichat-message__emote h-5 inline"
             :src="messagePart.value"
           >
         </template>
