@@ -9,9 +9,9 @@
         v-for="chatMessage in combinedChat"
         :key="chatMessage.id"
         :data-platform="chatMessage.platform"
-        class="multichat-message py-1"
+        class="multichat-message py-1 leading-6"
       >
-        <img class="multichat-message__platform h-5 inline" :src="`/platforms/${chatMessage.platform}.png`">
+        <img class="multichat-message__platform h-5 w-5 object-contain inline" :src="`/platforms/${chatMessage.platform}.png`">
         <span
           class="multichat-message__user font-bold px-1 inline-block"
           v-text="chatMessage.userName + ':'"
@@ -25,11 +25,17 @@
             class="multichat-message__text break-words"
             v-text="messagePart.value"
           />
-          <img
+          <div
             v-else-if="messagePart.type === 'image'"
-            class="multichat-message__emote h-5 inline"
-            :src="messagePart.value"
+            class="inline-flex justify-center items-center h-0"
           >
+            <div class="inline">
+              <img
+                class="multichat-message__emote h-7 inline mx-px"
+                :src="messagePart.value"
+              >
+            </div>
+          </div>
         </template>
       </div>
     </TransitionGroup>

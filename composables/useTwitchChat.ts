@@ -42,16 +42,9 @@ const splitTwitchMessage = (message: string, emotes: tmi.CommonUserstate["emotes
   messageParts.push(message.slice(lastIndex))
 
   // TODO: handle betterttv emotes by splitting the message on spaces and then check if the part is a betterttv emote
-  return messageParts.map<MessagePart>(part => {
-    if (typeof part === "string") {
-      return {
-        type: "text",
-        value: part
-      }
-    } else {
-      return part
-    }
-  })
+  return messageParts
+    .map<MessagePart>(part => typeof part === "string" ? { type: "text", value: part } : part)
+    .filter(part => part.value !== " ")
 }
 
 export default function(channelName: string) {
