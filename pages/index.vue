@@ -3,7 +3,7 @@
     <TransitionGroup
       name="list"
       tag="div"
-      class="absolute bottom-0 left-0 p-4"
+      class="absolute bottom-0 left-0 right-0 p-4 overflow-hidden"
     >
       <div
         v-for="chatMessage in combinedChat"
@@ -13,7 +13,7 @@
       >
         <img class="multichat-message__platform h-5 inline" :src="`/platforms/${chatMessage.platform}.png`">
         <span
-          class="multichat-message__user font-bold px-1"
+          class="multichat-message__user font-bold px-1 inline-block"
           v-text="chatMessage.userName + ':'"
         />
         <template
@@ -22,7 +22,7 @@
         >
           <span
             v-if="messagePart.type === 'text'"
-            class="multichat-message__text"
+            class="multichat-message__text break-words"
             v-text="messagePart.value"
           />
           <img
@@ -44,15 +44,19 @@ const params = useUrlSearchParams("history")
 const routeParams = {
   kick: params.kick as string,
   twitch: params.twitch as string,
+  restreamToken: params.restreamToken as string,
 }
+
+console.log("routeParams", routeParams)
 
 const kickChat = useKickChat(routeParams.kick)
 const twitchChat = useTwitchChat(routeParams.twitch)
-// useYoutubeChat
+const youtubeChat = useRestream(routeParams.restreamToken)
 const combinedChat = computed(() => {
   const res = [
     ...kickChat.value,
     ...twitchChat.value,
+    ...youtubeChat.value,
   ].filter(chatMessage => !chatMessage.isDeleted)
   res.sort((a, b) => a.created_at - b.created_at)
   return res
@@ -61,16 +65,17 @@ const combinedChat = computed(() => {
 
 <style>
 .list-move,
-.list-leave-active {
+.list-leave-active,
+.list-enter-active {
   transition: all 0.5s ease-out;
 }
-.list-enter-active {
-  transition: all 0.5s ease-out 0.2s;
-}
 
-.list-leave-to,
+.list-leave-to {
+  opacity: 0;
+}
 .list-enter-from {
   opacity: 0;
+  transform: translateY(64px);
 }
 
 .list-leave-active {

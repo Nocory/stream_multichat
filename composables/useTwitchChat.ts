@@ -57,6 +57,11 @@ const splitTwitchMessage = (message: string, emotes: tmi.CommonUserstate["emotes
 export default function(channelName: string) {
   const chatMessages = ref<ChatMessage[]>([])
 
+  if (!channelName) {
+    console.log("No twitch channel name provided.")
+    return chatMessages
+  }
+
   const client = new tmi.Client({
     options: { debug: true },
     connection: {
@@ -78,7 +83,7 @@ export default function(channelName: string) {
   })
 
   client.on("chat", (channel, userstate, message, self) => {
-    console.log("TWITCH CHAT", userstate.username, message)
+    // console.log("TWITCH CHAT", userstate.username, message)
     chatMessages.value = [
       ...chatMessages.value.slice(-49),
       {
@@ -93,7 +98,7 @@ export default function(channelName: string) {
   })
 
   client.on("cheer", (channel, userstate, message) => {
-    console.log("TWITCH CHEER", userstate.username, message)
+    // console.log("TWITCH CHEER", userstate.username, message)
     chatMessages.value = [
       ...chatMessages.value.slice(-49),
       {

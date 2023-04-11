@@ -104,7 +104,10 @@ export default function(channelName: string): Ref<ChatMessage[]> {
       try {
         handleMessage(socket, event)
       } catch (error) {
-        console.error(error)
+        console.error({
+          error,
+          event,
+        })
       }
     },
     onDisconnected: () => console.log("Websocket disconnected"),
