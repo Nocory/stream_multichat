@@ -31,7 +31,7 @@
           >
             <div class="inline">
               <img
-                class="multichat-message__emote h-7 inline mx-px"
+                class="multichat-message__emote w-7 h-7 object-contain inline mx-px"
                 :src="messagePart.value"
               >
             </div>
