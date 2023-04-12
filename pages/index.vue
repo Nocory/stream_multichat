@@ -43,14 +43,18 @@
 </template>
 
 <script setup lang="ts">
-import { useUrlSearchParams } from "@vueuse/core"
+import { useIntervalFn, useUrlSearchParams } from "@vueuse/core"
+import { ChatMessage } from "~/types/common"
 
 const params = useUrlSearchParams("history")
 
 const routeParams = {
+  // platforms
   kick: params.kick as string,
   twitch: params.twitch as string,
   restreamToken: params.restreamToken as string,
+  // debug
+  autochat: params.autochat as string,
 }
 
 console.log("routeParams", routeParams)
@@ -58,11 +62,15 @@ console.log("routeParams", routeParams)
 const kickChat = useKickChat(routeParams.kick)
 const twitchChat = useTwitchChat(routeParams.twitch)
 const youtubeChat = useRestream(routeParams.restreamToken)
+
+const autoChat = routeParams.autochat ? useAutoChat() : ref([])
+
 const combinedChat = computed(() => {
   const res = [
     ...kickChat.value,
     ...twitchChat.value,
     ...youtubeChat.value,
+    ...autoChat.value,
   ].filter(chatMessage => !chatMessage.isDeleted)
   res.sort((a, b) => a.created_at - b.created_at)
   return res
