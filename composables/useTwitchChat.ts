@@ -83,7 +83,7 @@ export default function(channelName: string) {
         id: userstate.id ?? "unknown",
         created_at: Date.now(),
         platform: "twitch",
-        userName: userstate.username ?? "unknown",
+        userName: userstate["display-name"] ?? "unknown",
         messageParts: splitTwitchMessage(message, userstate.emotes ?? {}),
         isDeleted: false,
       }
@@ -91,14 +91,14 @@ export default function(channelName: string) {
   })
 
   client.on("cheer", (channel, userstate, message) => {
-    // console.log("TWITCH CHEER", userstate.username, message)
+    // console.log("TWITCH CHEER", userstate, message)
     chatMessages.value = [
       ...chatMessages.value.slice(-49),
       {
         id: userstate.id ?? "unknown",
         created_at: Date.now(),
         platform: "twitch",
-        userName: userstate.username ?? "unknown",
+        userName: userstate["display-name"] ?? "unknown",
         messageParts: splitTwitchMessage(message, userstate.emotes ?? {}),
         isDeleted: false,
       }
