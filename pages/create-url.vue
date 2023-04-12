@@ -15,13 +15,20 @@
     <button class="w-32 shadow-lg rounded bg-slate-900 text-slate-100" @click="createUrl">
       Create URL
     </button>
-    <div>
-      {{ url }}
+    <div v-if="url" class="flex items-center gap-4">
+      <span>
+        {{ url }}
+      </span>
+      <button class="bg-slate-100 p-2 border rounded" @click="() => clipBoard.copy()">
+        Copy to clipboard {{ clipBoard.copied.value ? "✔" : "📋" }}
+      </button>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import { useClipboard } from "@vueuse/core"
+
 const twitch = ref("")
 const kick = ref("")
 const restreamToken = ref("")
@@ -31,8 +38,16 @@ const restreamToken = ref("")
 const url = ref("")
 
 const createUrl = () => {
-  url.value = `${window.location.origin}/?twitch=${twitch.value}&kick=${kick.value}&restreamToken=${restreamToken.value}`
+  const parameters: string[] = []
+
+  if (twitch.value) parameters.push(`twitch=${twitch.value}`)
+  if (kick.value) parameters.push(`kick=${kick.value}`)
+  if (restreamToken.value) parameters.push(`restreamToken=${restreamToken.value}`)
+
+  if (parameters.length) url.value = `${window.location.origin}/?${parameters.join("&")}`
 }
+
+const clipBoard = useClipboard({ source: url })
 </script>
 
 <style scoped>
