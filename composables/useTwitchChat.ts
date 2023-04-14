@@ -1,5 +1,6 @@
 import * as tmi from "tmi.js"
-import { ChatMessage, MessagePart } from "~/types/common"
+import { CombinedChat } from "./useCombinedChat"
+import { MessagePart } from "~/types/common"
 
 /**
  * Splits a Twitch message into text and emote parts.
@@ -47,16 +48,9 @@ const splitTwitchMessage = (message: string, emotes: tmi.CommonUserstate["emotes
     .filter(part => part.value !== " ")
 }
 
-export default function(channelName: string) {
-  const chatMessages = ref<ChatMessage[]>([])
-
-  if (!channelName) {
-    console.log("No twitch channel name provided.")
-    return chatMessages
-  }
-
+export default function(channelName: string, combinedChat: CombinedChat) {
   const client = new tmi.Client({
-    options: { debug: true },
+    options: { debug: false },
     connection: {
       secure: true,
       reconnect: true
@@ -77,40 +71,30 @@ export default function(channelName: string) {
 
   client.on("chat", (channel, userstate, message, self) => {
     // console.log("TWITCH CHAT", userstate.username, message)
-    chatMessages.value = [
-      ...chatMessages.value.slice(-49),
-      {
-        id: userstate.id ?? "unknown",
-        created_at: Date.now(),
-        platform: "twitch",
-        userName: userstate["display-name"] ?? "unknown",
-        messageParts: splitTwitchMessage(message, userstate.emotes ?? {}),
-        isDeleted: false,
-      }
-    ]
+    combinedChat.addMessage({
+      id: userstate.id ?? "unknown",
+      created_at: Date.now(),
+      platform: "twitch",
+      userName: userstate["display-name"] ?? "unknown",
+      messageParts: splitTwitchMessage(message, userstate.emotes ?? {}),
+      isDeleted: false,
+    })
   })
 
   client.on("cheer", (channel, userstate, message) => {
     // console.log("TWITCH CHEER", userstate, message)
-    chatMessages.value = [
-      ...chatMessages.value.slice(-49),
-      {
-        id: userstate.id ?? "unknown",
-        created_at: Date.now(),
-        platform: "twitch",
-        userName: userstate["display-name"] ?? "unknown",
-        messageParts: splitTwitchMessage(message, userstate.emotes ?? {}),
-        isDeleted: false,
-      }
-    ]
+    combinedChat.addMessage({
+      id: userstate.id ?? "unknown",
+      created_at: Date.now(),
+      platform: "twitch",
+      userName: userstate["display-name"] ?? "unknown",
+      messageParts: splitTwitchMessage(message, userstate.emotes ?? {}),
+      isDeleted: false,
+    })
   })
 
   client.on("messagedeleted", (channel, username, deletedMessage, userstate) => {
-    for (const message of chatMessages.value) {
-      if (message.id === userstate["target-msg-id"]) {
-        message.isDeleted = true
-      }
-    }
+    combinedChat.removeMessage(userstate["target-msg-id"] as string)
   })
 
   client.on("action", (channel, userstate, message, self) => {
@@ -118,7 +102,8 @@ export default function(channelName: string) {
   })
 
   client.on("clearchat", channel => {
-    chatMessages.value = []
+    // TODO: implement
+    // chatMessages.value = []
   })
 
   client.on("notice", (channel, msgid, message) => {
@@ -130,19 +115,21 @@ export default function(channelName: string) {
   })
 
   client.on("timeout", (channel, username, reason, duration, userState) => {
-    for (const message of chatMessages.value) {
-      if (message.userName === username) {
-        message.isDeleted = true
-      }
-    }
+    // TODO: implement
+    // for (const message of chatMessages.value) {
+    //   if (message.userName === username) {
+    //     message.isDeleted = true
+    //   }
+    // }
   })
 
   client.on("ban", (channel, username, reason, userState) => {
-    for (const message of chatMessages.value) {
-      if (message.userName === username) {
-        message.isDeleted = true
-      }
-    }
+    // TODO: implement
+    // for (const message of chatMessages.value) {
+    //   if (message.userName === username) {
+    //     message.isDeleted = true
+    //   }
+    // }
   })
 
   client.on("raw_message", (message, tags) => {
@@ -152,6 +139,4 @@ export default function(channelName: string) {
   onScopeDispose(() => {
     client.disconnect()
   })
-
-  return chatMessages
 }

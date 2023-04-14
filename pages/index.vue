@@ -1,14 +1,13 @@
 <template>
   <div class="multichat h-screen overflow-hidden">
-    <TransitionGroup
-      name="list"
-      tag="div"
+    <div
       class="absolute bottom-0 left-0 right-0 p-4 overflow-hidden"
     >
       <div
-        v-for="chatMessage in combinedChat"
+        v-for="chatMessage in visibleChat"
         :key="chatMessage.id"
         :data-platform="chatMessage.platform"
+        :data-id="chatMessage.id"
         class="multichat-message py-1 leading-6"
       >
         <img class="multichat-message__platform h-5 w-5 object-contain inline" :src="`/platforms/${chatMessage.platform}.png`">
@@ -38,13 +37,13 @@
           </div>
         </template>
       </div>
-    </TransitionGroup>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { useIntervalFn, useUrlSearchParams } from "@vueuse/core"
-import { ChatMessage } from "~/types/common"
+import { useUrlSearchParams } from "@vueuse/core"
+import useCombinedChat from "~/composables/useCombinedChat"
 
 const params = useUrlSearchParams("history")
 
@@ -59,40 +58,14 @@ const routeParams = {
 
 console.log("routeParams", routeParams)
 
-const kickChat = useKickChat(routeParams.kick)
-const twitchChat = useTwitchChat(routeParams.twitch)
-const youtubeChat = useRestream(routeParams.restreamToken)
+const combinedChat = useCombinedChat()
 
-const autoChat = routeParams.autochat ? useAutoChat() : ref([])
+if (routeParams.kick) useKickChat(routeParams.kick, combinedChat)
+if (routeParams.twitch) useTwitchChat(routeParams.twitch, combinedChat)
+if (routeParams.restreamToken) useRestream(routeParams.restreamToken, combinedChat)
+if (routeParams.autochat) useAutoChat(combinedChat)
 
-const combinedChat = computed(() => {
-  const res = [
-    ...kickChat.value,
-    ...twitchChat.value,
-    ...youtubeChat.value,
-    ...autoChat.value,
-  ].filter(chatMessage => !chatMessage.isDeleted)
-  res.sort((a, b) => a.created_at - b.created_at)
-  return res
+const visibleChat = computed(() => {
+  return combinedChat.messages.value.filter(chatMessage => !chatMessage.isDeleted)
 })
 </script>
-
-<style>
-.list-move,
-.list-leave-active,
-.list-enter-active {
-  transition: all 0.5s ease-out;
-}
-
-.list-leave-to {
-  opacity: 0;
-}
-.list-enter-from {
-  opacity: 0;
-  transform: translateY(64px);
-}
-
-.list-leave-active {
-  position: absolute;
-}
-</style>

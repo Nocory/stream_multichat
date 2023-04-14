@@ -1,5 +1,6 @@
 import { useWebSocket } from "@vueuse/core"
-import { ChatMessage, MessagePart } from "~/types/common"
+import { CombinedChat } from "./useCombinedChat"
+import { MessagePart } from "~/types/common"
 
 const splitKickMessage = (msg: string) => {
   const emoteRegex = /(\[emote:\d+:[^\]]*\])/
@@ -29,9 +30,7 @@ const splitKickMessage = (msg: string) => {
   })
 }
 
-export default function(channelName: string): Ref<ChatMessage[]> {
-  const chatMessages = ref<ChatMessage[]>([])
-
+export default function(channelName: string, combinedChat: CombinedChat) {
   const handleConnected = async (socket: WebSocket) => {
     const apiResponse = await fetch(`https://kick.com/api/v2/channels/${channelName}/`)
     if (!apiResponse.ok) {
@@ -63,24 +62,17 @@ export default function(channelName: string): Ref<ChatMessage[]> {
     // console.log(parsedData)
     switch (parsedEvent.event) {
       case "App\\Events\\ChatMessageSentEvent":
-        chatMessages.value = [
-          ...chatMessages.value.slice(-49),
-          {
-            id: parsedData.message.id,
-            created_at: Date.now(),
-            platform: "kick",
-            userName: parsedData.user.username,
-            messageParts: splitKickMessage(parsedData.message.message),
-            isDeleted: false,
-          }
-        ]
+        combinedChat.addMessage({
+          id: parsedData.message.id,
+          created_at: Date.now(),
+          platform: "kick",
+          userName: parsedData.user.username,
+          messageParts: splitKickMessage(parsedData.message.message),
+          isDeleted: false,
+        })
         break
       case "App\\Events\\ChatMessageDeletedEvent":
-        for (const message of chatMessages.value) {
-          if (message.id === parsedData.deletedMessage.id) {
-            message.isDeleted = true
-          }
-        }
+        combinedChat.removeMessage(parsedData.deletedMessage.id)
         break
       case "pusher:ping":
         socket.send(JSON.stringify({
@@ -113,6 +105,4 @@ export default function(channelName: string): Ref<ChatMessage[]> {
     onDisconnected: () => console.log("Websocket disconnected"),
     autoReconnect: { delay: 5000 },
   })
-
-  return chatMessages
 }

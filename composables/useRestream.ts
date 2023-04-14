@@ -1,12 +1,11 @@
 import { useWebSocket } from "@vueuse/core"
+import { CombinedChat } from "./useCombinedChat"
 import { ChatMessage } from "~/types/common"
 
-export default function(restreamToken: string): Ref<ChatMessage[]> {
-  const chatMessages = ref<ChatMessage[]>([])
-
+export default function(restreamToken: string, combinedChat: CombinedChat) {
   if (!restreamToken) {
     console.log("RESTREAM: No token provided")
-    return chatMessages
+    return
   }
 
   const handleMessage = (event: MessageEvent<any>) => {
@@ -19,22 +18,19 @@ export default function(restreamToken: string): Ref<ChatMessage[]> {
           parsedEvent?.payload?.eventPayload?.author?.displayName !== undefined &&
           parsedEvent?.payload?.eventPayload?.text !== undefined
         ) {
-          chatMessages.value = [
-            ...chatMessages.value.slice(-49),
-            {
-              id: parsedEvent.payload.eventIdentifier,
-              created_at: Date.now(),
-              platform: "youtube",
-              userName: parsedEvent?.payload?.eventPayload?.author.displayName ?? "unknown",
-              messageParts: [
-                {
-                  type: "text",
-                  value: parsedEvent?.payload?.eventPayload?.text ?? "unknown"
-                }
-              ],
-              isDeleted: false,
-            }
-          ]
+          combinedChat.addMessage({
+            id: parsedEvent.payload.eventIdentifier,
+            created_at: Date.now(),
+            platform: "youtube",
+            userName: parsedEvent?.payload?.eventPayload?.author.displayName ?? "unknown",
+            messageParts: [
+              {
+                type: "text",
+                value: parsedEvent?.payload?.eventPayload?.text ?? "unknown"
+              }
+            ],
+            isDeleted: false,
+          })
         }
         break
       case "heartbeat":
@@ -57,6 +53,4 @@ export default function(restreamToken: string): Ref<ChatMessage[]> {
     onDisconnected: () => console.log("Websocket disconnected"),
     autoReconnect: { delay: 5000 },
   })
-
-  return chatMessages
 }
