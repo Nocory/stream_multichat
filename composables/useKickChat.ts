@@ -22,7 +22,7 @@ const splitKickMessage = (msg: string) => {
       const emoji = el.match(/:(\w+)]/)![1]
       return ({
         type: "image",
-        value: `https://dbxmjjzl5pc1g.cloudfront.net/552e5545-930e-4c6d-a620-8531ce9debdf/images/emojis/${emoji}.png`
+        value: `https://dbxmjjzl5pc1g.cloudfront.net/1a5a1ed4-870d-485b-b066-58da995a15df/images/emojis/${emoji}.png`
       })
     } else {
       return ({ type: "text", value: el })
