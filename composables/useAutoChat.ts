@@ -6,9 +6,9 @@ export default function(combinedChat: CombinedChat) {
 
   useIntervalFn(
     () => {
-      combinedChat.addMessage({
+      combinedChat.add({
         id: `autoChat_${autoChatCounter}`,
-        created_at: Date.now(),
+        createdAt: Date.now(),
         platform: ["kick", "twitch", "youtube"][autoChatCounter % 3],
         userName: "User",
         messageParts: [

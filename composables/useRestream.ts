@@ -18,9 +18,9 @@ export default function(restreamToken: string, combinedChat: CombinedChat) {
           parsedEvent?.payload?.eventPayload?.author?.displayName !== undefined &&
           parsedEvent?.payload?.eventPayload?.text !== undefined
         ) {
-          combinedChat.addMessage({
+          combinedChat.add({
             id: parsedEvent.payload.eventIdentifier,
-            created_at: Date.now(),
+            createdAt: Date.now(),
             platform: "youtube",
             userName: parsedEvent?.payload?.eventPayload?.author.displayName ?? "unknown",
             messageParts: [

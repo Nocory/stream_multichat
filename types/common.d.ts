@@ -5,7 +5,7 @@ export type MessagePart = {
 
 export type ChatMessage = {
   id: string
-  created_at: number
+  createdAt: number
   platform: string
   userName: string
   messageParts: MessagePart[]

@@ -33,7 +33,7 @@ async function fetchChatMessages(liveChatId: string, nextPageToken?: string) {
       ...chatMessages.value.slice(-49),
       {
         id: item.id,
-        created_at: Date.now(),
+        createdAt: Date.now(),
         platform: "youtube",
         userName: item.authorDetails.displayName,
         messageParts: [

@@ -62,9 +62,9 @@ export default function(channelName: string, combinedChat: CombinedChat) {
     // console.log(parsedData)
     switch (parsedEvent.event) {
       case "App\\Events\\ChatMessageSentEvent":
-        combinedChat.addMessage({
+        combinedChat.add({
           id: parsedData.message.id,
-          created_at: Date.now(),
+          createdAt: Date.now(),
           platform: "kick",
           userName: parsedData.user.username,
           messageParts: splitKickMessage(parsedData.message.message),
@@ -72,7 +72,7 @@ export default function(channelName: string, combinedChat: CombinedChat) {
         })
         break
       case "App\\Events\\ChatMessageDeletedEvent":
-        combinedChat.removeMessage(parsedData.deletedMessage.id)
+        combinedChat.remove({ id: parsedData.deletedMessage.id })
         break
       case "pusher:ping":
         socket.send(JSON.stringify({

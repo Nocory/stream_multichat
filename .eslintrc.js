@@ -37,7 +37,7 @@ module.exports = {
     "no-sequences": "error",
     "@typescript-eslint/no-shadow": "error",
     "no-throw-literal": "error",
-    "no-undef-init": "error",
+    "no-undef-init": "off",
     "no-unneeded-ternary": "error",
     "no-unused-expressions": "error",
     "no-unused-vars": "off",

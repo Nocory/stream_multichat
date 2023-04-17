@@ -71,9 +71,9 @@ export default function(channelName: string, combinedChat: CombinedChat) {
 
   client.on("chat", (channel, userstate, message, self) => {
     // console.log("TWITCH CHAT", userstate.username, message)
-    combinedChat.addMessage({
+    combinedChat.add({
       id: userstate.id ?? "unknown",
-      created_at: Date.now(),
+      createdAt: Date.now(),
       platform: "twitch",
       userName: userstate["display-name"] ?? "unknown",
       messageParts: splitTwitchMessage(message, userstate.emotes ?? {}),
@@ -83,9 +83,9 @@ export default function(channelName: string, combinedChat: CombinedChat) {
 
   client.on("cheer", (channel, userstate, message) => {
     // console.log("TWITCH CHEER", userstate, message)
-    combinedChat.addMessage({
+    combinedChat.add({
       id: userstate.id ?? "unknown",
-      created_at: Date.now(),
+      createdAt: Date.now(),
       platform: "twitch",
       userName: userstate["display-name"] ?? "unknown",
       messageParts: splitTwitchMessage(message, userstate.emotes ?? {}),
@@ -94,7 +94,7 @@ export default function(channelName: string, combinedChat: CombinedChat) {
   })
 
   client.on("messagedeleted", (channel, username, deletedMessage, userstate) => {
-    combinedChat.removeMessage(userstate["target-msg-id"] as string)
+    combinedChat.remove({ id: userstate["target-msg-id"] as string })
   })
 
   client.on("action", (channel, userstate, message, self) => {
@@ -102,8 +102,7 @@ export default function(channelName: string, combinedChat: CombinedChat) {
   })
 
   client.on("clearchat", channel => {
-    // TODO: implement
-    // chatMessages.value = []
+    combinedChat.remove({ platform: "twitch" })
   })
 
   client.on("notice", (channel, msgid, message) => {
@@ -115,21 +114,17 @@ export default function(channelName: string, combinedChat: CombinedChat) {
   })
 
   client.on("timeout", (channel, username, reason, duration, userState) => {
-    // TODO: implement
-    // for (const message of chatMessages.value) {
-    //   if (message.userName === username) {
-    //     message.isDeleted = true
-    //   }
-    // }
+    combinedChat.remove({
+      userName: username,
+      platform: "twitch",
+    })
   })
 
   client.on("ban", (channel, username, reason, userState) => {
-    // TODO: implement
-    // for (const message of chatMessages.value) {
-    //   if (message.userName === username) {
-    //     message.isDeleted = true
-    //   }
-    // }
+    combinedChat.remove({
+      userName: username,
+      platform: "twitch",
+    })
   })
 
   client.on("raw_message", (message, tags) => {

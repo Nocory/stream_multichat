@@ -1,76 +1,117 @@
+import { useIntervalFn } from "@vueuse/core"
 import { ChatMessage } from "~/types/common"
+
+type MessageRemovalOptions = Partial<Omit<ChatMessage, "createdAt" | "messageParts" | "isDeleted">>
 
 export interface CombinedChat {
   messages: Ref<ChatMessage[]>
-  addMessage: (message: ChatMessage) => void
-  removeMessage: (id: string) => void
+  add: (message: ChatMessage) => void
+  remove: (removalOptions: MessageRemovalOptions) => void
 }
 
 const MAX_MESSAGES_TO_DISPLAY = 100
-const MAX_MESSAGE_QUEUE_LENGTH = 200
-const BASE_INTERVAL = 200
+const MESSAGE_BUFFER_SIZE = 500
+const MAX_INTERVAL = 333
 
+/**
+ * The composable is designed to hold the combined chat messages of various platforms.
+ * New messages are first added to a circular buffer and then continuously added to the `messages` array.
+ * The transfer rate is based on the average rate of recent new messages.
+ *
+ * @returns the `message` array and associated `add` and `remove` functions
+ *
+ */
 const useCombinedChat = (): CombinedChat => {
   const messages = ref<ChatMessage[]>([])
-  const messageQueue = ref<ChatMessage[]>([])
-  const intervalTimer = ref<number | null>(null)
+  const messageBuffer: ChatMessage[] = []
+  const recentMessagesPerSecond = ref<number[]>([])
 
-  const processQueue = () => {
-    if (intervalTimer.value !== null) clearInterval(intervalTimer.value)
+  let previousAddIndex = 0
+  let nextAddIndex = 0
+  let nextTakeIndex = 0
+  let timerId: undefined | number = undefined
 
-    if (messageQueue.value.length > 0) {
+  const averagerecentMessagesPerSecond = computed(() => {
+    if (recentMessagesPerSecond.value.length === 0) return Number.POSITIVE_INFINITY
+    return recentMessagesPerSecond.value.reduce((a, b) => a + b, 0) / recentMessagesPerSecond.value.length
+  })
+
+  let lastIntervalTime = Date.now()
+  useIntervalFn(() => {
+    const messagesSinceLastCheck = (nextAddIndex - previousAddIndex)
+    previousAddIndex = nextAddIndex
+    if (recentMessagesPerSecond.value.length >= 5) {
+      recentMessagesPerSecond.value.shift()
+    }
+    const now = Date.now()
+    const timeDiff = now - lastIntervalTime
+    lastIntervalTime = now
+    recentMessagesPerSecond.value.push(messagesSinceLastCheck / (timeDiff / 1000))
+  }, 1000)
+
+  const processNextMessage = () => {
+    window.clearInterval(timerId)
+
+    if (nextTakeIndex < nextAddIndex) {
       messages.value = [
         ...messages.value.slice(-(MAX_MESSAGES_TO_DISPLAY - 1)),
-        messageQueue.value.shift()!,
+        messageBuffer[nextTakeIndex % MESSAGE_BUFFER_SIZE],
       ]
-      const intervalFactor = Math.min(
-        1,
-        Math.max(0.1, 1.1 - (messageQueue.value.length * 2) / MAX_MESSAGE_QUEUE_LENGTH)
-      )
-      // console.log("processQueue", messageQueue.value.length, BASE_INTERVAL * intervalFactor)
-      intervalTimer.value = window.setTimeout(processQueue, BASE_INTERVAL * intervalFactor)
+      nextTakeIndex = nextTakeIndex + 1
+      const averagedInterval = 1000 / averagerecentMessagesPerSecond.value
+      const intervalFactor = Math.max(0, 1 - (((nextAddIndex - nextTakeIndex) - 10) * 5 / MESSAGE_BUFFER_SIZE))
+      const nextInterval = Math.min(MAX_INTERVAL, averagedInterval * intervalFactor)
+      // console.log(
+      //   "processNextMessage",
+      //   nextAddIndex,
+      //   nextTakeIndex,
+      //   averagerecentMessagesPerSecond.value.toFixed(2),
+      //   (nextAddIndex - nextTakeIndex),
+      //   averagedInterval.toFixed(2),
+      //   intervalFactor.toFixed(2),
+      //   nextInterval.toFixed(2),
+      // )
+      timerId = window.setTimeout(processNextMessage, nextInterval)
     } else {
-      intervalTimer.value = null
-      // console.log("processQueue END")
+      timerId = undefined
+      // console.log("processNextMessage END")
     }
   }
 
-  const addMessage = (message: ChatMessage) => {
-    if (messageQueue.value.length > MAX_MESSAGE_QUEUE_LENGTH) {
-      messageQueue.value = [
-        ...messageQueue.value.slice(-(MAX_MESSAGE_QUEUE_LENGTH - 1)),
-        message,
-      ]
-    } else {
-      messageQueue.value.push(message)
+  const add = (message: ChatMessage) => {
+    if (nextAddIndex - nextTakeIndex >= MESSAGE_BUFFER_SIZE) {
+      processNextMessage()
     }
-    if (!intervalTimer.value) {
-      // console.log("processQueue START")
-      processQueue()
+
+    messageBuffer[nextAddIndex % MESSAGE_BUFFER_SIZE] = message
+    nextAddIndex = nextAddIndex + 1
+
+    if (timerId === undefined) {
+      // console.log("processNextMessage START")
+      processNextMessage()
     }
   }
 
-  const removeMessage = (id: string) => {
-    for (const message of messages.value) {
-      if (message.id === id) {
+  const remove = (removalOptions:MessageRemovalOptions) => {
+    const checkMessage = (message: ChatMessage) => {
+      if (message.id === removalOptions.id ||
+        (message.userName === removalOptions.userName && message.platform === removalOptions.platform) ||
+        (message.userName === "" && message.platform === removalOptions.platform)) {
         message.isDeleted = true
       }
     }
-    for (const message of messageQueue.value) {
-      if (message.id === id) {
-        message.isDeleted = true
-      }
-    }
+    messages.value.forEach(checkMessage)
+    messageBuffer.forEach(checkMessage)
   }
 
   onScopeDispose(() => {
-    if (intervalTimer.value !== null) clearInterval(intervalTimer.value)
+    window.clearInterval(timerId)
   })
 
   return {
     messages,
-    addMessage,
-    removeMessage,
+    add,
+    remove,
   }
 }
 
