@@ -4,10 +4,8 @@ import { MessagePart } from "~/types/common"
 
 const splitKickMessage = (msg: string) => {
   const emoteRegex = /(\[emote:\d+:[^\]]*\])/
-  const emojiRegex = /(\[emoji:\w+\])/
-  const combinedRegex = new RegExp(`${emoteRegex.source}|${emojiRegex.source}`)
 
-  const parts = msg.split(combinedRegex).filter(part => part !== "" && part !== undefined)
+  const parts = msg.split(emoteRegex).filter(part => part !== "" && part !== undefined)
   // console.log(msg)
   // console.log(parts)
 
@@ -17,12 +15,6 @@ const splitKickMessage = (msg: string) => {
       return ({
         type: "image",
         value: `https://files.kick.com/emotes/${emote}/fullsize`
-      })
-    } else if (emojiRegex.test(el)) {
-      const emoji = el.match(/:(\w+)]/)![1]
-      return ({
-        type: "image",
-        value: `https://dbxmjjzl5pc1g.cloudfront.net/1a5a1ed4-870d-485b-b066-58da995a15df/images/emojis/${emoji}.png`
       })
     } else {
       return ({ type: "text", value: el })
@@ -49,7 +41,7 @@ export default function(channelName: string, combinedChat: CombinedChat) {
       event: "pusher:subscribe",
       data: {
         auth: "",
-        channel: `chatrooms.${parsedApiResponse.chatroom.id}`
+        channel: `chatrooms.${parsedApiResponse.chatroom.id}.v2`
       }
     }))
   }
@@ -61,18 +53,20 @@ export default function(channelName: string, combinedChat: CombinedChat) {
     // console.log(parsedEvent)
     // console.log(parsedData)
     switch (parsedEvent.event) {
-      case "App\\Events\\ChatMessageSentEvent":
-        combinedChat.add({
-          id: parsedData.message.id,
-          createdAt: Date.now(),
-          platform: "kick",
-          userName: parsedData.user.username,
-          messageParts: splitKickMessage(parsedData.message.message),
-          isDeleted: false,
-        })
+      case "App\\Events\\ChatMessageEvent":
+        if (parsedData.type === "message" || parsedData.type === "reply") {
+          combinedChat.add({
+            id: parsedData.id,
+            createdAt: Date.now(),
+            platform: "kick",
+            userName: parsedData.sender.username,
+            messageParts: splitKickMessage(parsedData.content),
+            isDeleted: false,
+          })
+        }
         break
-      case "App\\Events\\ChatMessageDeletedEvent":
-        combinedChat.remove({ id: parsedData.deletedMessage.id })
+      case "App\\Events\\MessageDeletedEvent":
+        combinedChat.remove({ id: parsedData.message.id })
         break
       case "pusher:ping":
         socket.send(JSON.stringify({
@@ -83,7 +77,7 @@ export default function(channelName: string, combinedChat: CombinedChat) {
     }
   }
 
-  useWebSocket("wss://ws-us2.pusher.com/app/eb1d5f283081a78b932c?protocol=7&client=js&version=7.4.0&flash=false", {
+  useWebSocket("wss://ws-us2.pusher.com/app/eb1d5f283081a78b932c?protocol=7&client=js&version=7.6.0&flash=false", {
     onConnected: socket => {
       try {
         handleConnected(socket)
