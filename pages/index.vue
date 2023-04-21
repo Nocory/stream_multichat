@@ -45,6 +45,7 @@
 import { useUrlSearchParams } from "@vueuse/core"
 import useCombinedChat from "~/composables/useCombinedChat"
 
+const router = useRouter()
 const params = useUrlSearchParams("history")
 
 const routeParams = {
@@ -55,8 +56,12 @@ const routeParams = {
   // debug
   autochat: params.autochat as string,
 }
-
 console.log("routeParams", routeParams)
+
+// navigate to /create-url if no parameters are set
+if (!routeParams.kick && !routeParams.twitch && !routeParams.restreamToken && !routeParams.autochat) {
+  router.push("/create-url")
+}
 
 const combinedChat = useCombinedChat()
 
