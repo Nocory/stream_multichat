@@ -60,8 +60,12 @@ console.log("routeParams", routeParams)
 
 const combinedChat = useCombinedChat()
 
-if (routeParams.kick) useKickChat(routeParams.kick, combinedChat)
-if (routeParams.twitch) useTwitchChat(routeParams.twitch, combinedChat)
+if (routeParams.kick) {
+  for (const channelName of routeParams.kick.split(" ")) useKickChat(channelName, combinedChat)
+}
+if (routeParams.twitch) {
+  for (const channelName of routeParams.twitch.split(" ")) useTwitchChat(channelName, combinedChat)
+}
 if (routeParams.restreamToken) useRestream(routeParams.restreamToken, combinedChat)
 if (routeParams.autochat) useAutoChat(combinedChat)
 
