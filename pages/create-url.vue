@@ -31,6 +31,17 @@
           type="text"
         >
       </div>
+      <div class="flex items-center">
+        <label for="autochat" class="font-bold cursor-pointer pr-2 select-none">
+          Simulate chat for testing purposes
+        </label>
+        <input
+          id="autochat"
+          v-model="autoChat"
+          type="checkbox"
+          class="w-4 h-4 cursor-pointer"
+        >
+      </div>
       <hr>
       <div
         class="flex flex-col gap-4"
@@ -69,6 +80,7 @@ import { useClipboard } from "@vueuse/core"
 const twitch = ref("")
 const kick = ref("")
 const restreamToken = ref("")
+const autoChat = ref(false)
 // const videoId = ref("")
 // const googleApi = ref("")
 
@@ -77,7 +89,8 @@ const url = computed(() => {
 
   if (twitch.value) parameters.push(`twitch=${twitch.value}`)
   if (kick.value) parameters.push(`kick=${kick.value}`)
-  if (restreamToken.value) parameters.push(`restreamToken=${restreamToken.value}`)
+  if (restreamToken.value) parameters.push(`restream-token=${restreamToken.value}`)
+  if (autoChat.value) parameters.push(`autochat=${autoChat.value}`)
 
   if (parameters.length) {
     return `${window.location.origin}/?${parameters.join("&")}`

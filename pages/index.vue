@@ -52,11 +52,11 @@ const routeParams = {
   // platforms
   kick: params.kick as string,
   twitch: params.twitch as string,
-  restreamToken: params.restreamToken as string,
+  restreamToken: (params["restream-token"] || params.restreamToken) as string,
   // debug
   autochat: params.autochat as string,
 }
-console.log("routeParams", routeParams)
+console.log("routeParams", routeParams, params)
 
 // navigate to /create-url if no parameters are set
 if (!routeParams.kick && !routeParams.twitch && !routeParams.restreamToken && !routeParams.autochat) {
