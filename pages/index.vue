@@ -10,9 +10,13 @@
         :data-id="chatMessage.id"
         class="multichat-message py-1 leading-6"
       >
-        <img class="multichat-message__platform h-5 w-5 object-contain inline" :src="`/platforms/${chatMessage.platform}.png`">
+        <img
+          v-if="showPlatformIcons"
+          class="multichat-message__platform h-5 w-5 object-contain mr-1 inline"
+          :src="`/platforms/${chatMessage.platform}.png`"
+        >
         <span
-          class="multichat-message__user font-bold px-1 inline-block"
+          class="multichat-message__user font-bold mr-1 inline-block"
           v-text="chatMessage.userName + ':'"
         />
         <template
@@ -62,6 +66,9 @@ console.log("routeParams", routeParams, params)
 if (!routeParams.kick && !routeParams.twitch && !routeParams.restreamToken && !routeParams.autochat) {
   router.push("/create-url")
 }
+
+const showPlatformIcons = Boolean(params.autochat) ||
+  ([routeParams.kick, routeParams.twitch, routeParams.restreamToken].filter(Boolean).length >= 2)
 
 const combinedChat = useCombinedChat()
 
