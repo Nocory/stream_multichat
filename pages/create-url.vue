@@ -32,15 +32,28 @@
         >
       </div>
       <div class="flex items-center">
-        <label for="autochat" class="font-bold cursor-pointer pr-2 select-none">
-          Simulate chat for testing purposes
+        <input
+          id="platformIcons"
+          v-model="forcePlatformIcons"
+          type="checkbox"
+          class="w-4 h-4 cursor-pointer"
+        >
+        <label for="platformIcons" class="flex flex-col cursor-pointer pl-2 select-none leading-none">
+          <div class="font-bold">Always show streaming platform icons</div>
+          <div class="text-slate-500">Even when only one streaming platform is used</div>
         </label>
+      </div>
+      <div class="flex items-center">
         <input
           id="autochat"
           v-model="autoChat"
           type="checkbox"
           class="w-4 h-4 cursor-pointer"
         >
+        <label for="autochat" class="flex flex-col cursor-pointer pl-2 select-none leading-none">
+          <div class="font-bold">Simulate chat messages</div>
+          <div class="text-slate-500">Used for testing and debugging</div>
+        </label>
       </div>
       <hr>
       <div
@@ -80,6 +93,7 @@ import { useClipboard } from "@vueuse/core"
 const twitch = ref("")
 const kick = ref("")
 const restreamToken = ref("")
+const forcePlatformIcons = ref(false)
 const autoChat = ref(false)
 // const videoId = ref("")
 // const googleApi = ref("")
@@ -93,6 +107,7 @@ const url = computed(() => {
   if (autoChat.value) parameters.push(`autochat=${autoChat.value}`)
 
   if (parameters.length) {
+    if (forcePlatformIcons.value) parameters.push(`force-platform-icons=${forcePlatformIcons.value}`)
     return `${window.location.origin}/?${parameters.join("&")}`
   } else {
     return ""

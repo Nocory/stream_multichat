@@ -59,6 +59,8 @@ const routeParams = {
   restreamToken: (params["restream-token"] || params.restreamToken) as string,
   // debug
   autochat: params.autochat as string,
+  // appearance
+  forcePlatformIcons: params["force-platform-icons"] as string,
 }
 console.log("routeParams", routeParams, params)
 
@@ -66,8 +68,8 @@ console.log("routeParams", routeParams, params)
 if (!routeParams.kick && !routeParams.twitch && !routeParams.restreamToken && !routeParams.autochat) {
   router.push("/create-url")
 }
-
-const showPlatformIcons = Boolean(params.autochat) ||
+const showPlatformIcons = routeParams.forcePlatformIcons === "true" ||
+  routeParams.autochat === "true" ||
   ([routeParams.kick, routeParams.twitch, routeParams.restreamToken].filter(Boolean).length >= 2)
 
 const combinedChat = useCombinedChat()
