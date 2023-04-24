@@ -1,4 +1,4 @@
-import { useIntervalFn } from "@vueuse/core"
+import { useDocumentVisibility, useIntervalFn } from "@vueuse/core"
 import { ChatMessage } from "~/types/common"
 
 type MessageRemovalOptions = Partial<Omit<ChatMessage, "createdAt" | "messageParts" | "isDeleted">>
@@ -30,6 +30,22 @@ const useCombinedChat = (): CombinedChat => {
   let nextAddIndex = 0
   let nextTakeIndex = 0
   let timerId: undefined | number = undefined
+
+  const documentVisibility = useDocumentVisibility()
+
+  watch(documentVisibility, newVisibility => {
+    console.log("documentVisibility", newVisibility)
+    if (newVisibility === "visible") {
+      window.clearTimeout(timerId)
+      timerId = undefined
+      nextTakeIndex = nextAddIndex
+      const newMessages: ChatMessage[] = []
+      for (let i = Math.max(0, nextAddIndex - MAX_MESSAGES_TO_DISPLAY); i < nextAddIndex; i++) {
+        newMessages.push(messageBuffer[i % MESSAGE_BUFFER_SIZE])
+      }
+      messages.value = newMessages
+    }
+  })
 
   const averagerecentMessagesPerSecond = computed(() => {
     if (recentMessagesPerSecond.value.length === 0) return Number.POSITIVE_INFINITY
