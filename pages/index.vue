@@ -85,7 +85,7 @@ const messages = [
   "Please update the URL of the OBS Browser Source",
   `New URL: ${newUrl}`,
   branchPrefix ? `Just remove the "${branchPrefix}" part at the start of the URL` : "",
-  "Redirecting in 3 seconds...",
+  "Redirecting in 3...",
   "2...",
   "1...",
   "now",
