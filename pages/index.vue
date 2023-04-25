@@ -68,22 +68,52 @@ console.log("routeParams", routeParams, params)
 if (!routeParams.kick && !routeParams.twitch && !routeParams.restreamToken && !routeParams.autochat) {
   router.push("/create-url")
 }
-const showPlatformIcons = routeParams.forcePlatformIcons === "true" ||
-  routeParams.autochat === "true" ||
-  ([routeParams.kick, routeParams.twitch, routeParams.restreamToken].filter(Boolean).length >= 2)
+const showPlatformIcons = false
 
 const combinedChat = useCombinedChat()
-
-if (routeParams.kick) {
-  for (const channelName of routeParams.kick.split(" ")) useKickChat(channelName, combinedChat)
-}
-if (routeParams.twitch) {
-  for (const channelName of routeParams.twitch.split(" ")) useTwitchChat(channelName, combinedChat)
-}
-if (routeParams.restreamToken) useRestream(routeParams.restreamToken, combinedChat)
-if (routeParams.autochat) useAutoChat(combinedChat)
 
 const visibleChat = computed(() => {
   return combinedChat.messages.value.filter(chatMessage => !chatMessage.isDeleted)
 })
+
+const newUrl = `https://stream-multichat.netlify.app/${location.search}`
+
+const branchPrefix = location.host.match(/^\w+--/)?.[0]
+
+const messages = [
+  "This version of the application is outdated",
+  "Please update the URL of the OBS Browser Source",
+  `New URL: ${newUrl}`,
+  branchPrefix ? `Just remove the "${branchPrefix}" part at the start of the URL` : "",
+  "Redirecting in 3 seconds...",
+  "2...",
+  "1...",
+  "now",
+]
+
+const showInfoMessage = async () => {
+  for (let i = 0; i < messages.length; i++) {
+    combinedChat.add({
+      id: `infomessage_${i}`,
+      platform: "twitch",
+      userName: "",
+      messageParts: [
+        {
+          type: "text",
+          value: messages[i]
+        },
+      ],
+      createdAt: Date.now(),
+      isDeleted: false,
+    })
+    if (i === messages.length - 1) {
+      // navigate to new URL
+      window.location.assign(newUrl)
+    }
+    await new Promise(resolve => setTimeout(resolve, 3000))
+  }
+}
+
+showInfoMessage()
+
 </script>
