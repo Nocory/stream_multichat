@@ -90,9 +90,7 @@ const talliedVotes = computed(() => {
     acc[vote.choice] = acc[vote.choice] ? acc[vote.choice] + 1 : 1
     return acc
   }, {} as Record<string, number>)
-  // sort the result
-  const sortedResult = Object.fromEntries(Object.entries(result).sort(([, a], [, b]) => b - a))
-  return sortedResult
+  return result
 })
 
 const totalVotes = computed(() => Object.values(talliedVotes.value).reduce((acc, el) => acc + el, 0))
