@@ -117,8 +117,8 @@ const handleCommand = (command: string) => {
 
   // handle poll start with numeric options
   if (command === "!poll") {
-    const stringOptions = Array.from({ length: 10 }, (_, i) => `${i + 1}`)
-    startVote(stringOptions)
+    showOptionNames.value = false
+    startVote(["1", "2"])
     return
   }
 
