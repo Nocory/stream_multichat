@@ -10,11 +10,18 @@
       >
         <div class="flex flex-col flex-1 mb-1 border border-white">
           <div class="flex">
-            <div class="font-bold w-10 flex justify-center items-center bg-slate-50">
+            <div class="font-bold w-10 flex justify-center items-center bg-slate-50 leading-none">
               {{ index + 1 }}
             </div>
 
-            <div class="flex items-center bg-slate-500/90 h-[2rem] relative flex-1">
+            <div
+              class="flex items-center bg-slate-500/90 h-8 relative flex-1"
+              :class="{
+                '!h-6': voteOptions.length > 4 && voteOptions.length <= 6,
+                '!h-5': voteOptions.length > 6 && voteOptions.length <= 8,
+                '!h-4': voteOptions.length > 8,
+              }"
+            >
               <div
                 class="bg-slate-900 h-full w-full absolute top-0 left-0 origin-left z-0 transition-all ease-linear duration-200"
                 :style="`transform: scaleX(${talliedVotes[option] ? talliedVotes[option] / totalVotes : 0});`"
@@ -22,13 +29,13 @@
               <div
                 class="z-50 flex items-center gap-2 mx-2 font-bold leading-none text-white flex-1"
               >
-                <div v-if="option.length > 2" class="flex-1">
+                <div v-if="showOptionNames" class="flex-1">
                   {{ option }}
                 </div>
-                <div v-show="talliedVotes[option]" class="relative z-50">
+                <div v-if="talliedVotes[option]" class="relative z-50">
                   {{ Math.round((talliedVotes[option] / totalVotes) * 1000) / 10 }}%
                 </div>
-                <div v-show="talliedVotes[option]" class="relative z-50">
+                <div v-if="talliedVotes[option]" class="relative z-50">
                   ({{ talliedVotes[option] }})
                 </div>
               </div>
@@ -71,6 +78,7 @@ const createVoteOption = () => {
 }
 
 const voteOptions = ref<string[]>([])
+const showOptionNames = ref(false)
 
 const votes = ref<Record<string, {
   choice: string,
@@ -121,6 +129,7 @@ const handleCommand = (command: string) => {
     const parsedNumber = parseInt(pollDigit)
     if (parsedNumber >= 0 && parsedNumber <= 100) {
       const stringOptions = Array.from({ length: parsedNumber }, (_, i) => `${i + 1}`)
+      showOptionNames.value = false
       startVote(stringOptions)
     }
     return
@@ -131,9 +140,9 @@ const handleCommand = (command: string) => {
   if (matchList) {
     const itemsString = matchList[1]
     if (itemsString.length > 1000) return
-    const regexItems = /\s*(\S.*?\S|\S)\s*(?:,|$)/g
-    const items = Array.from(itemsString.matchAll(regexItems), m => m[1])
+    const items = itemsString.split(/\s*,\s*/)
     if (items.length > 0 && items.length <= 100) {
+      showOptionNames.value = true
       startVote(items)
     }
   }
