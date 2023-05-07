@@ -46,17 +46,13 @@
 </template>
 
 <script setup lang="ts">
-import { useUrlSearchParams } from "@vueuse/core"
-import useCombinedChat from "~/composables/useCombinedChat"
+import { useIntervalFn, useUrlSearchParams } from "@vueuse/core"
+import useWorker from "~/composables/useWorker"
 
 const router = useRouter()
 const params = useUrlSearchParams("history")
 
 const routeParams = {
-  // platforms
-  kick: params.kick as string,
-  twitch: params.twitch as string,
-  restreamToken: (params["restream-token"] || params.restreamToken) as string,
   // debug
   autochat: params.autochat as string,
   // appearance
@@ -64,26 +60,49 @@ const routeParams = {
 }
 console.log("routeParams", routeParams, params)
 
+const subscriptions = getChannelsFromUrl()
+
 // navigate to /create-url if no parameters are set
-if (!routeParams.kick && !routeParams.twitch && !routeParams.restreamToken && !routeParams.autochat) {
+if (subscriptions.length === 0 && !routeParams.autochat) {
   router.push("/create-url")
 }
 const showPlatformIcons = routeParams.forcePlatformIcons === "true" ||
   routeParams.autochat === "true" ||
-  ([routeParams.kick, routeParams.twitch, routeParams.restreamToken].filter(Boolean).length >= 2)
+  subscriptions.length > 1
 
-const combinedChat = useCombinedChat()
-
-if (routeParams.kick) {
-  for (const channelName of routeParams.kick.split(" ")) useKickChat(channelName, combinedChat)
-}
-if (routeParams.twitch) {
-  for (const channelName of routeParams.twitch.split(" ")) useTwitchChat(channelName, combinedChat)
-}
-if (routeParams.restreamToken) useRestream(routeParams.restreamToken, combinedChat)
-if (routeParams.autochat) useAutoChat(combinedChat)
+const messageBuffer = useMessageBuffer()
+useWorker(subscriptions, {
+  onAdd: messageBuffer.add,
+  onRemove: messageBuffer.remove,
+})
+const displayedMessages = useDisplayedMessages(messageBuffer)
 
 const visibleChat = computed(() => {
-  return combinedChat.messages.value.filter(chatMessage => !chatMessage.isDeleted)
+  return displayedMessages.value.filter(chatMessage => !chatMessage.isDeleted)
+  // return []
 })
+
+useIntervalFn(
+  () => {
+  // fetch "redirect.txt" on this address with an additional parameter to bust the cache
+  // this will trigger a redirect to the latest version of the site
+    fetch(`/redirect-branch.txt?cachebust=${Date.now()}`)
+      .then(response => {
+        if (response.headers.get("content-type")?.includes("text/plain")) {
+          return response.text()
+        } else {
+          throw new Error("redirect-branch.txt not found")
+        }
+      })
+      .then(redirectBranch => {
+        if (redirectBranch && process.env.NODE_ENV === "production") {
+          window.location.assign(`https://${redirectBranch}--stream-multichat.netlify.app/${location.search}`)
+        }
+      })
+      .catch(error => {
+        console.warn("redirect-branch.txt warn", error)
+      })
+  },
+  10000,
+)
 </script>

@@ -35,6 +35,7 @@ async function fetchChatMessages(liveChatId: string, nextPageToken?: string) {
         id: item.id,
         createdAt: Date.now(),
         platform: "youtube",
+        channel: "unknown",
         userName: item.authorDetails.displayName,
         messageParts: [
           {
@@ -43,6 +44,8 @@ async function fetchChatMessages(liveChatId: string, nextPageToken?: string) {
           }
         ],
         isDeleted: false,
+        isHost: false,
+        isModerator: false,
       }
     ]
   }

@@ -1,15 +1,17 @@
 import { useIntervalFn } from "@vueuse/core"
-import { CombinedChat } from "./useCombinedChat"
+import { MessageBuffer } from "./useMessageBuffer"
+import { StreamingPlatform } from "~/types/common"
 
-export default function(combinedChat: CombinedChat) {
+export default function(messageBuffer: MessageBuffer) {
   let autoChatCounter = 0
 
   useIntervalFn(
     () => {
-      combinedChat.add({
+      messageBuffer.add({
         id: `autoChat_${autoChatCounter}`,
         createdAt: Date.now(),
-        platform: ["kick", "twitch", "youtube"][autoChatCounter % 3],
+        platform: (["kick", "twitch", "youtube"] satisfies StreamingPlatform[])[autoChatCounter % 3],
+        channel: "Channel",
         userName: "User",
         messageParts: [
           {
@@ -24,6 +26,8 @@ export default function(combinedChat: CombinedChat) {
           }
         ],
         isDeleted: false,
+        isModerator: false,
+        isHost: false,
       })
       autoChatCounter += 1
     },

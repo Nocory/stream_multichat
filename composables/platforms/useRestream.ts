@@ -1,8 +1,13 @@
 import { useWebSocket } from "@vueuse/core"
-import { CombinedChat } from "./useCombinedChat"
-import { ChatMessage } from "~/types/common"
+import { ChatMessage, MessageRemovalOptions } from "~/types/common"
 
-export default function(restreamToken: string, combinedChat: CombinedChat) {
+export default function(
+  restreamToken: string,
+  callbacks?: {
+    onAdd?: (message: ChatMessage) => void,
+    onRemove?: (removalOptions: MessageRemovalOptions) => void,
+  }
+) {
   if (!restreamToken) {
     console.log("RESTREAM: No token provided")
     return
@@ -18,10 +23,11 @@ export default function(restreamToken: string, combinedChat: CombinedChat) {
           parsedEvent?.payload?.eventPayload?.author?.displayName !== undefined &&
           parsedEvent?.payload?.eventPayload?.text !== undefined
         ) {
-          combinedChat.add({
+          callbacks?.onAdd?.({
             id: parsedEvent.payload.eventIdentifier,
             createdAt: Date.now(),
             platform: "youtube",
+            channel: "unknown",
             userName: parsedEvent?.payload?.eventPayload?.author.displayName ?? "unknown",
             messageParts: [
               {
@@ -30,6 +36,8 @@ export default function(restreamToken: string, combinedChat: CombinedChat) {
               }
             ],
             isDeleted: false,
+            isHost: false,
+            isModerator: false,
           })
         }
         break
@@ -41,7 +49,7 @@ export default function(restreamToken: string, combinedChat: CombinedChat) {
 
   useWebSocket(`wss://backend.chat.restream.io/ws/embed?token=${restreamToken}`, {
     onConnected: socket => {
-      console.log("Restream websocket connected")
+      console.log("Restream websocket connected", restreamToken)
     },
     onMessage: (socket, event) => {
       try {
@@ -50,7 +58,7 @@ export default function(restreamToken: string, combinedChat: CombinedChat) {
         console.error(error)
       }
     },
-    onDisconnected: () => console.log("Websocket disconnected"),
+    onDisconnected: () => console.log("Restream Websocket disconnected", restreamToken),
     autoReconnect: { delay: 5000 },
   })
 }

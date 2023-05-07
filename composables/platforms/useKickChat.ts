@@ -1,6 +1,5 @@
-import { useWebSocket } from "@vueuse/core"
-import { CombinedChat } from "./useCombinedChat"
-import { MessagePart } from "~/types/common"
+import { tryOnScopeDispose, useWebSocket } from "@vueuse/core"
+import { ChatMessage, MessagePart, MessageRemovalOptions } from "~/types/common"
 
 const splitKickMessage = (msg: string) => {
   const emoteRegex = /(\[emote:\d+:[^\]]*\])/
@@ -22,7 +21,15 @@ const splitKickMessage = (msg: string) => {
   })
 }
 
-export default function(channelName: string, combinedChat: CombinedChat) {
+export default function(
+  channelName: string,
+  callbacks?: {
+    onAdd?: (message: ChatMessage) => void,
+    onRemove?: (removalOptions: MessageRemovalOptions) => void,
+  }
+) {
+  console.log("useKickChat init", channelName)
+
   const handleConnected = async (socket: WebSocket) => {
     const apiResponse = await fetch(`https://kick.com/api/v2/channels/${channelName}/`)
     if (!apiResponse.ok) {
@@ -55,18 +62,26 @@ export default function(channelName: string, combinedChat: CombinedChat) {
     switch (parsedEvent.event) {
       case "App\\Events\\ChatMessageEvent":
         if (parsedData.type === "message" || parsedData.type === "reply") {
-          combinedChat.add({
+          // console.log("KICK CHAT", parsedData.sender.username, parsedData.content)
+          const badgeTypes = parsedData.sender.identity?.badges?.map((badge: any) => badge.type)
+          callbacks?.onAdd?.({
             id: parsedData.id,
             createdAt: Date.now(),
             platform: "kick",
+            channel: channelName,
             userName: parsedData.sender.username,
             messageParts: splitKickMessage(parsedData.content),
             isDeleted: false,
+            isHost: badgeTypes?.includes("broadcaster") ?? false,
+            isModerator: badgeTypes?.includes("moderator") ?? false,
           })
         }
         break
       case "App\\Events\\MessageDeletedEvent":
-        combinedChat.remove({ id: parsedData.message.id })
+        callbacks?.onRemove?.({
+          type: "id",
+          id: parsedData.message.id,
+        })
         break
       case "pusher:ping":
         socket.send(JSON.stringify({
@@ -77,7 +92,7 @@ export default function(channelName: string, combinedChat: CombinedChat) {
     }
   }
 
-  useWebSocket("wss://ws-us2.pusher.com/app/eb1d5f283081a78b932c?protocol=7&client=js&version=7.6.0&flash=false", {
+  const websocket = useWebSocket("wss://ws-us2.pusher.com/app/eb1d5f283081a78b932c?protocol=7&client=js&version=7.6.0&flash=false", {
     onConnected: socket => {
       try {
         handleConnected(socket)
@@ -96,7 +111,13 @@ export default function(channelName: string, combinedChat: CombinedChat) {
         })
       }
     },
-    onDisconnected: () => console.log("Websocket disconnected"),
+    onDisconnected: () => console.log("Kick Websocket disconnected", channelName),
     autoReconnect: { delay: 5000 },
+    autoClose: false,
+  })
+
+  tryOnScopeDispose(() => {
+    console.log("useKickChat tryOnScopeDispose", channelName)
+    websocket.close()
   })
 }
