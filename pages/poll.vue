@@ -99,18 +99,18 @@ const handleCommand = (command: string) => {
     return
   }
 
+  // handle poll reset
+  if (command === "!poll reset") {
+    votes.value = {}
+    return
+  }
+
   if (voteOptions.value.length !== 0) return
 
   // handle poll start with default options
   if (command === "!poll") {
     showOptionNames.value = false
     startVote(["1", "2"])
-    return
-  }
-
-  // handle poll reset
-  if (command === "!poll reset") {
-    votes.value = {}
     return
   }
 
