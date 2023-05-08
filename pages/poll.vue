@@ -1,8 +1,6 @@
 <template>
   <div v-if="voteOptions.length !== 0" class="h-screen overflow-hidden">
-    <div
-      class="flex flex-col items-stretch w-full"
-    >
+    <div class="flex flex-col items-stretch w-full">
       <div
         v-for="(option, index) in voteOptions"
         :key="option"
@@ -13,7 +11,6 @@
             <div class="font-bold w-10 flex justify-center items-center bg-slate-50 leading-none">
               {{ index + 1 }}
             </div>
-
             <div
               class="flex items-center bg-slate-500/90 h-8 relative flex-1"
               :class="{
@@ -24,7 +21,7 @@
             >
               <div
                 class="bg-slate-900 h-full w-full absolute top-0 left-0 origin-left z-0 transition-all ease-linear duration-200"
-                :style="`transform: scaleX(${talliedVotes[option] ? talliedVotes[option] / totalVotes : 0});`"
+                :style="`transform: scaleX(${talliedVotes[index + 1] ? talliedVotes[index + 1] / totalVotes : 0});`"
               />
               <div
                 class="z-50 flex items-center gap-2 mx-2 font-bold leading-none text-white flex-1"
@@ -32,11 +29,11 @@
                 <div v-if="showOptionNames" class="flex-1">
                   {{ option }}
                 </div>
-                <div v-if="talliedVotes[option]" class="relative z-50">
-                  {{ Math.round((talliedVotes[option] / totalVotes) * 1000) / 10 }}%
+                <div v-if="talliedVotes[index + 1]" class="relative z-50">
+                  {{ Math.round((talliedVotes[index + 1] / totalVotes) * 1000) / 10 }}%
                 </div>
-                <div v-if="talliedVotes[option]" class="relative z-50">
-                  ({{ talliedVotes[option] }})
+                <div v-if="talliedVotes[index + 1]" class="relative z-50">
+                  ({{ talliedVotes[index + 1] }})
                 </div>
               </div>
             </div>
@@ -44,11 +41,6 @@
         </div>
       </div>
     </div>
-    <!-- <div class="flex leading-none">
-      <div class="bg-slate-50/90 p-1">
-        Votes: {{ totalVotes }}
-      </div>
-    </div> -->
     <!-- <button class="bg-slate-800 text-white p-4 m-2" @click="startVote(['option a','option b','option c','option d'])">
       start vote
     </button> -->
@@ -59,29 +51,14 @@
 </template>
 
 <script setup lang="ts">
-import { TransitionPresets, useTransition } from "@vueuse/core"
 import { ChatMessage } from "~/types/common"
 
-const createVoteOption = () => {
-  const count = ref(0)
-  const percentage = computed(() => count.value / 100)
-  const smoothedPercentage = useTransition(percentage, {
-    duration: 1000,
-    transition: TransitionPresets.easeInOutCubic,
-  })
-
-  return {
-    count,
-    percentage,
-    smoothedPercentage,
-  }
-}
+const VOTE_GRACE_PERIOD_MS = 5000
 
 const voteOptions = ref<string[]>([])
 const showOptionNames = ref(false)
-
 const votes = ref<Record<string, {
-  choice: string,
+  choice: number,
   timestamp: number,
 }>>({})
 
@@ -93,12 +70,15 @@ const talliedVotes = computed(() => {
   return result
 })
 
-const totalVotes = computed(() => Object.values(talliedVotes.value).reduce((acc, el) => acc + el, 0))
+const totalVotes = computed(() => Object.keys(votes.value).length)
 
 const startVote = (voteNames: string[]) => {
-  voteOptions.value = []
-  votes.value = {}
   voteOptions.value = voteNames
+  // filter previously cast votes by grace period and check if choice is in valid range
+  const now = Date.now()
+  votes.value = Object.fromEntries(Object.entries(votes.value).filter(([key, value]) => {
+    return (now - value.timestamp < VOTE_GRACE_PERIOD_MS) && (value.choice >= 1 && value.choice <= voteNames.length)
+  }))
 }
 
 const stopVote = () => {
@@ -113,15 +93,28 @@ const handleCommand = (command: string) => {
     return
   }
 
+  // handle poll simulation
+  if (command === "!poll simulate") {
+    simulateVotes()
+    return
+  }
+
   if (voteOptions.value.length !== 0) return
 
-  // handle poll start with numeric options
+  // handle poll start with default options
   if (command === "!poll") {
     showOptionNames.value = false
     startVote(["1", "2"])
     return
   }
 
+  // handle poll reset
+  if (command === "!poll reset") {
+    votes.value = {}
+    return
+  }
+
+  // handle poll start with numeric options
   const pollDigit = command.match(/^!poll (\d+)$/i)?.[1]
   if (pollDigit) {
     const parsedNumber = parseInt(pollDigit)
@@ -151,34 +144,15 @@ const checkForChoice = (identifier: string, message: string) => {
 
   if (numberChoice) {
     const numericChoice = parseInt(numberChoice)
-    const textChoice = voteOptions.value[numericChoice - 1]
-    if (textChoice) {
+    if (
+      voteOptions.value.length === 0 ||
+      (numericChoice >= 1 && numericChoice <= voteOptions.value.length)) {
       votes.value[identifier] = {
-        choice: textChoice,
+        choice: numericChoice,
         timestamp: Date.now()
       }
     }
   }
-
-  // const yesChoice = message.match(/^(yes|ja)[ ,]?/i)?.[0]
-  // const noChoice = message.match(/^(no|nein)[ ,]?/i)?.[0]
-
-  // let choice = ""
-
-  // if (numberChoice) {
-  //   choice = numberChoice
-  // } else if (yesChoice) {
-  //   choice = "Ja"
-  // } else if (noChoice) {
-  //   choice = "Nein"
-  // }
-
-  // if (choice) {
-  //   votes.value[identifier] = {
-  //     choice,
-  //     timestamp: Date.now()
-  //   }
-  // }
 }
 
 const handleMessage = (message: ChatMessage) => {
@@ -189,21 +163,19 @@ const handleMessage = (message: ChatMessage) => {
     if (message.isHost || message.isModerator) {
       handleCommand(messagePart)
     }
-  } else if (voteOptions.value.length > 0) {
+  } else {
     checkForChoice(`${message.platform}_${message.userName}`, message.messageParts[0].value)
   }
 }
 
 const simulateVotes = async () => {
-  for (let i = 0; i < 1000; i++) {
-    // handleMessage(Math.floor(Math.random() * 800).toString(), Math.floor(Math.random() * 4 + 1).toString())
-    // handleMessage(i.toString(), Math.floor(Math.random() * 4 + 1).toString())
+  for (let i = 0; i < 250; i++) {
     handleMessage({
       id: "some_id",
       createdAt: 0,
       platform: "twitch",
       channel: "itsconroy",
-      userName: Math.floor(Math.random() * 500).toString(),
+      userName: i.toString(),
       messageParts: [
         {
           type: "text",
@@ -214,7 +186,7 @@ const simulateVotes = async () => {
       isHost: false,
       isModerator: false,
     })
-    await new Promise(resolve => setTimeout(resolve, 1))
+    await new Promise(resolve => setTimeout(resolve, 10))
   }
 }
 
