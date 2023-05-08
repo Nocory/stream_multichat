@@ -1,4 +1,4 @@
-import { useWebSocket } from "@vueuse/core"
+import { tryOnScopeDispose, useWebSocket } from "@vueuse/core"
 import { ChatMessage, MessageRemovalOptions } from "~/types/common"
 
 export default function(
@@ -8,6 +8,7 @@ export default function(
     onRemove?: (removalOptions: MessageRemovalOptions) => void,
   }
 ) {
+  console.log("useRestream init", restreamToken)
   if (!restreamToken) {
     console.log("RESTREAM: No token provided")
     return
@@ -47,7 +48,7 @@ export default function(
     }
   }
 
-  useWebSocket(`wss://backend.chat.restream.io/ws/embed?token=${restreamToken}`, {
+  const websocket = useWebSocket(`wss://backend.chat.restream.io/ws/embed?token=${restreamToken}`, {
     onConnected: socket => {
       console.log("Restream websocket connected", restreamToken)
     },
@@ -60,5 +61,11 @@ export default function(
     },
     onDisconnected: () => console.log("Restream Websocket disconnected", restreamToken),
     autoReconnect: { delay: 5000 },
+    autoClose: false,
+  })
+
+  tryOnScopeDispose(() => {
+    console.log("useKickChat tryOnScopeDispose", restreamToken)
+    websocket.close()
   })
 }
