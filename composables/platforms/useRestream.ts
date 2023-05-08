@@ -24,6 +24,7 @@ export default function(
           parsedEvent?.payload?.eventPayload?.author?.displayName !== undefined &&
           parsedEvent?.payload?.eventPayload?.text !== undefined
         ) {
+          // console.log("YT CHAT", parsedEvent?.payload?.eventPayload)
           callbacks?.onAdd?.({
             id: parsedEvent.payload.eventIdentifier,
             createdAt: Date.now(),
@@ -37,8 +38,8 @@ export default function(
               }
             ],
             isDeleted: false,
-            isHost: false,
-            isModerator: false,
+            isHost: parsedEvent?.payload?.eventPayload?.author?.isChatOwner ?? false,
+            isModerator: parsedEvent?.payload?.eventPayload?.author?.isChatModerator ?? false,
           })
         }
         break
