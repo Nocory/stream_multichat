@@ -28,7 +28,7 @@ export default function(
     onRemove?: (removalOptions: MessageRemovalOptions) => void,
   }
 ) {
-  console.log("useKickChat init", channelName)
+  console.log(`useKickChat(${channelName}) connecting to channel`)
 
   const handleConnected = async (socket: WebSocket) => {
     const apiResponse = await fetch(`https://kick.com/api/v2/channels/${channelName}/`)
@@ -111,13 +111,13 @@ export default function(
         })
       }
     },
-    onDisconnected: () => console.log("Kick Websocket disconnected", channelName),
+    onDisconnected: () => console.log(`useKickChat(${channelName}) websocket disconnected`),
     autoReconnect: { delay: 5000 },
     autoClose: false,
   })
 
   tryOnScopeDispose(() => {
-    console.log("useKickChat tryOnScopeDispose", channelName)
+    console.log(`useKickChat(${channelName}) tryOnScopeDispose`)
     websocket.close()
   })
 }

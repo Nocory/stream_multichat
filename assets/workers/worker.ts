@@ -17,7 +17,7 @@ interface SharedWorkerGlobalScope {
 const _self: SharedWorkerGlobalScope = self as any
 
 const workerId = Math.floor(Math.random() * 1000000)
-console.log(`Worker (${workerId}) Started`)
+console.log(`WORKER(${workerId}) started`)
 
 const allPorts = reactive(new Set<MessagePort>())
 
@@ -30,13 +30,26 @@ const portSubscriptions : Record<StreamingPlatform, Record<string, {
   youtube: {},
 })
 
-const broadcastToPorts = (
-  // implement discriminating union
+type BroadCastToPortsArg =
+| {
+  ports: MessagePort[]
+  type: "chatMessage"
+  message: ChatMessage
+}
+| {
   ports: MessagePort[],
-  type: "chatMessage" | "removedMessage",
-  message: ChatMessage | MessageRemovalOptions,
-) => {
-  // logger.debug(`sending message to ${ports.length} ports`)
+  type: "removedMessage",
+  message: MessageRemovalOptions,
+}
+
+const broadcastToPorts = ({ ports, type, message }:BroadCastToPortsArg) => {
+  // if (type === "chatMessage") {
+  //   if (message.messageParts[0].type === "text" && message.messageParts[0].value === "!closeAllPorts") {
+  //     console.log(`WORKER(${workerId}) closing all ports!`)
+  //     allPorts.forEach(port => port.close())
+  //     return
+  //   }
+  // }
   ports.forEach(port => {
     port.postMessage({
       type,
@@ -98,30 +111,54 @@ const handleSubscription = (port: MessagePort, subscriptions: ChannelSubscriptio
           case "twitch":
             useTwitchChat(channel, {
               onAdd: message => {
-                broadcastToPorts(portSubscriptions[platform][channel].ports, "chatMessage", message)
+                broadcastToPorts({
+                  ports: portSubscriptions[platform][channel].ports,
+                  type: "chatMessage",
+                  message,
+                })
               },
               onRemove: removalOptions => {
-                broadcastToPorts(portSubscriptions[platform][channel].ports, "removedMessage", removalOptions)
+                broadcastToPorts({
+                  ports: portSubscriptions[platform][channel].ports,
+                  type: "removedMessage",
+                  message: removalOptions,
+                })
               }
             })
             break
           case "kick":
             useKickChat(channel, {
               onAdd: message => {
-                broadcastToPorts(portSubscriptions[platform][channel].ports, "chatMessage", message)
+                broadcastToPorts({
+                  ports: portSubscriptions[platform][channel].ports,
+                  type: "chatMessage",
+                  message,
+                })
               },
               onRemove: removalOptions => {
-                broadcastToPorts(portSubscriptions[platform][channel].ports, "removedMessage", removalOptions)
+                broadcastToPorts({
+                  ports: portSubscriptions[platform][channel].ports,
+                  type: "removedMessage",
+                  message: removalOptions,
+                })
               }
             })
             break
           case "youtube":
             useRestream(channel, {
               onAdd: message => {
-                broadcastToPorts(portSubscriptions[platform][channel].ports, "chatMessage", message)
+                broadcastToPorts({
+                  ports: portSubscriptions[platform][channel].ports,
+                  type: "chatMessage",
+                  message,
+                })
               },
               onRemove: removalOptions => {
-                broadcastToPorts(portSubscriptions[platform][channel].ports, "removedMessage", removalOptions)
+                broadcastToPorts({
+                  ports: portSubscriptions[platform][channel].ports,
+                  type: "removedMessage",
+                  message: removalOptions,
+                })
               }
             })
             break
@@ -139,15 +176,14 @@ _self.onconnect = function(e) {
   const port = e.ports[0]
   allPorts.add(port)
 
-  console.log(`= _self.onconnect = client ${clientId} connected to worker ${workerId} (active: ${allPorts.size})`)
+  console.log(`WORKER(${workerId}) opened port to CLIENT(${clientId}) [active: ${allPorts.size}]`)
 
   const removePort = () => {
     clearInterval(pingIntervalId)
     clearTimeout(pongTimeoutId)
-    console.log(`= removePort = closing port ID ${clientId} (active: ${allPorts.size})`)
     allPorts.delete(port)
     port.close()
-    // logger.debug(`= removePort = closed port ID ${clientId} (active: ${allPorts.size})`)
+    console.log(`WORKER(${workerId}) closed port of CLIENT(${clientId}) [active: ${allPorts.size}]`)
   }
 
   let pingIntervalId: ReturnType<typeof setTimeout> | undefined = undefined
@@ -156,7 +192,7 @@ _self.onconnect = function(e) {
   const restartPongTimeout = () => {
     clearTimeout(pongTimeoutId)
     pongTimeoutId = setTimeout(() => {
-      console.log(`Client ${clientId} timed out. Closing port.`)
+      console.log(`WORKER(${workerId}) did not receive "pong" from CLIENT(${clientId}). Closing port.`)
       removePort()
     }, 7000)
   }
@@ -170,7 +206,7 @@ _self.onconnect = function(e) {
           restartPongTimeout()
           break
         case "subscribe":
-          console.log(`= subscribe = client ${clientId} subscribing to ${eventData.subscriptions.length} channels`)
+          console.log(`WORKER(${workerId}) received subscription request from CLIENT(${clientId}) for ${eventData.subscriptions.length} channels`)
           handleSubscription(port, eventData.subscriptions)
           // logger.debug(`= subscribe = client ${clientId} subscribed to ${eventData.subscriptions.length} channels`)
           break
@@ -179,11 +215,11 @@ _self.onconnect = function(e) {
           break
         }
         case "close":
-          console.log("Port closed by client request")
+          console.log(`WORKER(${workerId}) closing port by CLIENT(${clientId}) request`)
           removePort()
           break
         default:
-          console.warn("Unknown worker message", eventData)
+          console.warn(`WORKER(${workerId}) received unknown message:`, eventData)
       }
     }
   }
@@ -191,7 +227,7 @@ _self.onconnect = function(e) {
   pingIntervalId = setInterval(() => {
     // console.log(`Sending ping to client ${clientId}`)
     port.postMessage({ type: "ping" })
-  }, 3333)
+  }, 2000)
 
   restartPongTimeout()
 }

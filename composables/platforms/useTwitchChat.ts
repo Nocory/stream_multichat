@@ -56,7 +56,7 @@ export default function(
     onRemove?: (removalOptions: MessageRemovalOptions) => void,
   }
 ) {
-  console.log("useTwitchChat init", channelName)
+  console.log(`useTwitchChat(${channelName}) connecting to channel`)
 
   const client = new tmi.Client({
     options: { debug: false },
@@ -71,7 +71,7 @@ export default function(
   client.connect().catch(console.error)
 
   client.on("disconnected", reason => {
-    console.log("Twitch Websocket disconnected. reason:", reason, channelName)
+    console.log(`useTwitchChat(${channelName}) websocket disconnected. reason:`, reason, channelName)
   })
 
   client.on("message", (channel, tags, message, self) => {
@@ -190,7 +190,7 @@ export default function(
   // })
 
   tryOnScopeDispose(() => {
-    console.log("useTwitchChat tryOnScopeDispose", channelName)
+    console.log(`useTwitchChat(${channelName}) tryOnScopeDispose`)
     client.disconnect()
   })
 }

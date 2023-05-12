@@ -9,13 +9,25 @@ const useWorker = (
     onRemove?: (message: MessageRemovalOptions) => void,
   }
 ) => {
+  let heartbeatTimerId = -1
   let worker: SharedWorker | undefined = undefined
 
+  const restartHeartbeatTimeout = () => {
+    clearTimeout(heartbeatTimerId)
+    heartbeatTimerId = window.setTimeout(() => {
+      console.log("useWorker did not receive a message in 5 seconds... reconnecting to worker")
+      connectToWorker()
+    }, 5000)
+  }
+
   const connectToWorker = () => {
-    console.log("useWorker connectToWorker A")
+    restartHeartbeatTimeout()
+    console.log("useWorker: Connecting to worker...")
+    worker?.port.postMessage({ type: "close" })
+    worker?.port.close()
     worker = new MyWorker() as SharedWorker // Ideally this shouldn't need to be cast. Investigate import type.
 
-    console.log("useWorker connectToWorker B")
+    console.log("useWorker: Connected")
     worker.port.onmessage = (event: MessageEvent) => {
       if (event.data) {
         const eventData = event.data as MessageToClient
@@ -23,6 +35,7 @@ const useWorker = (
           case "ping":
             // logger.debug("received ping, responding with pong")
             worker?.port.postMessage({ type: "pong" })
+            restartHeartbeatTimeout()
             break
           case "chatMessage":
             callbacks?.onAdd?.(eventData.message)
@@ -31,18 +44,22 @@ const useWorker = (
             callbacks?.onRemove?.(eventData.message)
             break
           default:
-            console.warn("Unknown worker message", event)
+            console.warn("useWorker: Unknown worker message", event)
         }
       }
     }
-    console.log("useWorker subscribing to channels", subscriptions)
+    worker.port.onmessageerror = (event: MessageEvent) => {
+      connectToWorker()
+    }
+    console.log("useWorker: Subscribing to channels", subscriptions)
     worker.port.postMessage({ type: "subscribe", subscriptions })
   }
 
   connectToWorker()
 
   onScopeDispose(() => {
-    console.log("useWorker onScopeDispose")
+    console.log("useWorker: onScopeDispose")
+    clearTimeout(heartbeatTimerId)
     worker?.port.postMessage({ type: "close" })
     worker?.port.close()
     worker = undefined
