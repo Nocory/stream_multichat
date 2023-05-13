@@ -1,16 +1,15 @@
 <template>
-  <div v-if="pollOptions.length !== 0" class="h-screen overflow-hidden">
+  <div
+    v-if="pollOptions.length !== 0"
+    class="h-screen overflow-hidden"
+  >
     <div class="flex flex-col gap-1 items-stretch w-full ">
       <div
         v-if="pollTitle"
         class="bg-gray-600 text-white min-h-[2rem] px-2 py-1"
       >
-        <span>
-          Chat Umfrage:
-        </span>
-        <span class="font-bold">
-          {{ pollTitle }}
-        </span>
+        <span class="mr-2">Chat Umfrage:</span>
+        <span class="font-bold">{{ pollTitle }}</span>
       </div>
       <div
         v-for="(option, index) in pollOptions"
@@ -21,17 +20,12 @@
           'min-h-[1.25rem]': pollOptions.length >= 6,
         }"
       >
-        <div
-          class="font-bold w-10 flex justify-center items-center bg-slate-50 leading-none p-px box-content"
-        >
+        <div class="font-bold w-10 flex justify-center items-center bg-slate-50 leading-none p-px box-content">
           {{ isYesNoPoll ? pollOptions[index] : index + 1 }}
         </div>
-        <div
-          class="flex items-center bg-slate-400/60 relative flex-1 box-content"
-        >
+        <div class="flex items-center bg-slate-400/60 relative flex-1 box-content">
           <div
-            class="bg-slate-900 h-full w-full absolute top-0 left-0 origin-left z-0
-                  transition-all ease-linear duration-500"
+            class="bg-slate-900 h-full w-full absolute top-0 left-0 origin-left z-0 transition-all ease-linear duration-500"
             :style="`transform: scaleX(${talliedVotes[index + 1] ? talliedVotes[index + 1] / totalVotes : 0});`"
           />
           <div class="z-50 h-full flex items-center gap-2 px-2 font-bold leading-none text-white flex-1 overflow-hidden">
