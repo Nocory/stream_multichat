@@ -1,44 +1,58 @@
 <template>
   <div v-if="pollOptions.length !== 0" class="h-screen overflow-hidden">
-    <div class="flex flex-col gap-1 items-stretch w-full">
-      <div class="bg-slate-900/90 text-white flex justify-center font-bold">
-        {{ yesNoTitle }}
+    <div class="flex flex-col gap-1 items-stretch w-full ">
+      <div
+        v-if="pollTitle"
+        class="bg-gray-600 text-white min-h-[2rem] px-2 py-1"
+      >
+        <span>
+          Chat Umfrage:
+        </span>
+        <span class="font-bold">
+          {{ pollTitle }}
+        </span>
       </div>
       <div
         v-for="(option, index) in pollOptions"
         :key="option"
-        class="flex flex-col"
+        class="flex flex-1 leading-none min-h-[2rem] border border-white"
+        :class="{
+          'min-h-[1.5rem]': pollOptions.length >= 4 && pollOptions.length < 6,
+          'min-h-[1.25rem]': pollOptions.length >= 6,
+        }"
       >
-        <div class="flex flex-col flex-1 border border-white">
-          <div class="flex">
-            <div class="font-bold w-10 flex justify-center items-center bg-slate-50 leading-none">
-              {{ yesNoTitle ? pollOptions[index] : index + 1 }}
+        <div
+          class="font-bold w-10 flex justify-center items-center bg-slate-50 leading-none p-px box-content"
+        >
+          {{ isYesNoPoll ? pollOptions[index] : index + 1 }}
+        </div>
+        <div
+          class="flex items-center bg-slate-400/60 relative flex-1 box-content"
+        >
+          <div
+            class="bg-slate-900 h-full w-full absolute top-0 left-0 origin-left z-0
+                  transition-all ease-linear duration-500"
+            :style="`transform: scaleX(${talliedVotes[index + 1] ? talliedVotes[index + 1] / totalVotes : 0});`"
+          />
+          <div class="z-50 h-full flex items-center gap-2 px-2 font-bold leading-none text-white flex-1 overflow-hidden">
+            <div
+              v-if="showOptionNames"
+              class="relative flex items-center"
+            >
+              <div class="absolute inset-0 bg-black/10 z-0 -m-8 blur-lg" />
+              <div class="z-10">
+                {{ option }}
+              </div>
             </div>
             <div
-              class="flex items-center bg-slate-500/90 h-8 relative flex-1"
-              :class="{
-                '!h-6': pollOptions.length > 4 && pollOptions.length <= 6,
-                '!h-5': pollOptions.length > 6 && pollOptions.length <= 8,
-                '!h-4': pollOptions.length > 8,
-              }"
-            >
-              <div
-                class="bg-slate-900 h-full w-full absolute top-0 left-0 origin-left z-0 transition-all ease-linear duration-200"
-                :style="`transform: scaleX(${talliedVotes[index + 1] ? talliedVotes[index + 1] / totalVotes : 0});`"
-              />
-              <div
-                class="z-50 flex items-center gap-2 mx-2 font-bold leading-none text-white flex-1"
-              >
-                <div v-if="showOptionNames && !yesNoTitle" class="flex-1">
-                  {{ option }}
-                </div>
-                <div v-if="talliedVotes[index + 1]" class="relative z-50">
-                  {{ Math.round((talliedVotes[index + 1] / totalVotes) * 1000) / 10 }}%
-                </div>
-                <div v-if="talliedVotes[index + 1]" class="relative z-50">
-                  ({{ talliedVotes[index + 1] }})
-                </div>
-              </div>
+              v-if="showOptionNames"
+              class="flex-1"
+            />
+            <div v-if="talliedVotes[index + 1]" class="relative z-50">
+              {{ Math.round((talliedVotes[index + 1] / totalVotes) * 1000) / 10 }}%
+            </div>
+            <div v-if="talliedVotes[index + 1]" class="relative z-50">
+              ({{ talliedVotes[index + 1] }})
             </div>
           </div>
         </div>
@@ -59,12 +73,18 @@ import { ChatMessage } from "~/types/common"
 const VOTE_GRACE_PERIOD_MS = 5000
 
 const pollOptions = ref<string[]>([])
-const showOptionNames = ref(false)
-const yesNoTitle = ref("")
+const showOptionNames = ref(true)
+const pollTitle = ref("")
+const isYesNoPoll = ref(false)
 const votes = ref<Record<string, {
   choice: number,
   timestamp: number,
-}>>({})
+}>>({
+  123: {
+    choice: 1,
+    timestamp: 0,
+  }
+})
 
 const talliedVotes = computed(() => {
   const result = Object.values(votes.value).reduce((acc, vote) => {
@@ -76,23 +96,39 @@ const talliedVotes = computed(() => {
 
 const totalVotes = computed(() => Object.keys(votes.value).length)
 
-const startPoll = (newOptions: string[]) => {
-  if (newOptions.length === 1) {
-    yesNoTitle.value = newOptions[0]
-    newOptions = ["ja", "nein"]
-  }
-  pollOptions.value = newOptions
+const startNumberPoll = (optionCount: number) => {
+  pollOptions.value = Array.from({ length: optionCount }, (_, i) => `${i + 1}`)
+  showOptionNames.value = false
   // filter previously cast votes by grace period and check if choice is in valid range
   const now = Date.now()
   votes.value = Object.fromEntries(Object.entries(votes.value).filter(([key, value]) => {
-    return (now - value.timestamp < VOTE_GRACE_PERIOD_MS) && (value.choice >= 1 && value.choice <= newOptions.length)
+    return (now - value.timestamp < VOTE_GRACE_PERIOD_MS) && (value.choice >= 1 && value.choice <= optionCount)
+  }))
+}
+
+const startYesNoPoll = (title: string) => {
+  isYesNoPoll.value = true
+  pollTitle.value = title
+  pollOptions.value = ["ja", "nein"]
+  showOptionNames.value = false
+}
+
+const startNamedPoll = (title: string, options: string[]) => {
+  pollTitle.value = title
+  pollOptions.value = options
+  showOptionNames.value = true
+  // filter previously cast votes by grace period and check if choice is in valid range
+  const now = Date.now()
+  votes.value = Object.fromEntries(Object.entries(votes.value).filter(([key, value]) => {
+    return (now - value.timestamp < VOTE_GRACE_PERIOD_MS) && (value.choice >= 1 && value.choice <= options.length)
   }))
 }
 
 const stopPoll = () => {
   pollOptions.value = []
   votes.value = {}
-  yesNoTitle.value = ""
+  pollTitle.value = ""
+  isYesNoPoll.value = false
 }
 
 const handleCommand = (command: string) => {
@@ -118,8 +154,7 @@ const handleCommand = (command: string) => {
 
   // handle poll start with default options
   if (command === "!poll") {
-    showOptionNames.value = false
-    startPoll(["1", "2"])
+    startNumberPoll(2)
     return
   }
 
@@ -128,9 +163,7 @@ const handleCommand = (command: string) => {
   if (pollDigit) {
     const parsedNumber = parseInt(pollDigit)
     if (parsedNumber >= 0 && parsedNumber <= 100) {
-      const stringOptions = Array.from({ length: parsedNumber }, (_, i) => `${i + 1}`)
-      showOptionNames.value = false
-      startPoll(stringOptions)
+      startNumberPoll(parsedNumber)
     }
     return
   }
@@ -141,15 +174,17 @@ const handleCommand = (command: string) => {
     const itemsString = matchList[1]
     if (itemsString.length > 1000) return
     const items = itemsString.split(/\s*,\s*/)
-    if (items.length > 0 && items.length <= 100) {
-      showOptionNames.value = true
-      startPoll(items)
+    console.log(items)
+    if (items.length === 1) {
+      startYesNoPoll(items[0])
+    } else if (items.length > 1) {
+      startNamedPoll(items[0], items.slice(1))
     }
   }
 }
 
 const checkForChoice = (identifier: string, message: string) => {
-  if (yesNoTitle.value) {
+  if (isYesNoPoll.value) {
     const yesNoChoice = message.match(/^(ja|nein)[ ,]?/i)?.[1].toLowerCase()
     if (!yesNoChoice) return
     votes.value[identifier] = {
@@ -175,7 +210,7 @@ const handleMessage = (message: ChatMessage) => {
   if (message.messageParts[0]?.type !== "text") return
 
   const messagePart = message.messageParts[0].value
-  if (messagePart.startsWith("!")) {
+  if (messagePart.startsWith("!poll")) {
     if (message.isHost || message.isModerator) {
       handleCommand(messagePart)
     }
@@ -185,7 +220,7 @@ const handleMessage = (message: ChatMessage) => {
 }
 
 const simulateVotes = async () => {
-  for (let i = 0; i < 250; i++) {
+  for (let i = 0; i < 150; i++) {
     handleMessage({
       id: "some_id",
       createdAt: 0,
