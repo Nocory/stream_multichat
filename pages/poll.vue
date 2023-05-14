@@ -66,19 +66,14 @@ import { ChatMessage } from "~/types/common"
 
 const VOTE_GRACE_PERIOD_MS = 5000
 
-const pollOptions = ref<string[]>([])
-const showOptionNames = ref(true)
 const pollTitle = ref("")
 const isYesNoPoll = ref(false)
+const pollOptions = ref<string[]>([])
+const showOptionNames = ref(true)
 const votes = ref<Record<string, {
   choice: number,
   timestamp: number,
-}>>({
-  123: {
-    choice: 1,
-    timestamp: 0,
-  }
-})
+}>>({})
 
 const talliedVotes = computed(() => {
   const result = Object.values(votes.value).reduce((acc, vote) => {
@@ -90,32 +85,56 @@ const talliedVotes = computed(() => {
 
 const totalVotes = computed(() => Object.keys(votes.value).length)
 
+const startPoll = (args: {
+  pollTitle: string,
+  isYesNoPoll: boolean,
+  pollOptions: string[],
+  showOptionNames: boolean,
+  countRecentVotes: boolean,
+}) => {
+  pollTitle.value = args.pollTitle
+  isYesNoPoll.value = args.isYesNoPoll
+  pollOptions.value = args.pollOptions
+  showOptionNames.value = args.showOptionNames
+  if (args.countRecentVotes) {
+    // filter previously cast votes by grace period and check if choice is in valid range
+    const now = Date.now()
+    votes.value = Object.fromEntries(Object.entries(votes.value).filter(([key, value]) => {
+      return (now - value.timestamp < VOTE_GRACE_PERIOD_MS) && (value.choice >= 1 && value.choice <= args.pollOptions.length)
+    }))
+  } else {
+    votes.value = {}
+  }
+}
+
 const startNumberPoll = (optionCount: number) => {
-  pollOptions.value = Array.from({ length: optionCount }, (_, i) => `${i + 1}`)
-  showOptionNames.value = false
-  // filter previously cast votes by grace period and check if choice is in valid range
-  const now = Date.now()
-  votes.value = Object.fromEntries(Object.entries(votes.value).filter(([key, value]) => {
-    return (now - value.timestamp < VOTE_GRACE_PERIOD_MS) && (value.choice >= 1 && value.choice <= optionCount)
-  }))
+  startPoll({
+    pollTitle: "",
+    isYesNoPoll: false,
+    pollOptions: Array.from({ length: optionCount }, (_, i) => `${i + 1}`),
+    showOptionNames: false,
+    countRecentVotes: true,
+  })
 }
 
 const startYesNoPoll = (title: string) => {
-  isYesNoPoll.value = true
-  pollTitle.value = title
-  pollOptions.value = ["ja", "nein"]
-  showOptionNames.value = false
+  startPoll({
+    pollTitle: title,
+    isYesNoPoll: true,
+    pollOptions: ["ja", "nein"],
+    showOptionNames: false,
+    countRecentVotes: false,
+  })
 }
 
-const startNamedPoll = (title: string, options: string[]) => {
-  pollTitle.value = title
-  pollOptions.value = options
-  showOptionNames.value = true
-  // filter previously cast votes by grace period and check if choice is in valid range
-  const now = Date.now()
-  votes.value = Object.fromEntries(Object.entries(votes.value).filter(([key, value]) => {
-    return (now - value.timestamp < VOTE_GRACE_PERIOD_MS) && (value.choice >= 1 && value.choice <= options.length)
-  }))
+const startTextPoll = (title: string, options: string[]) => {
+  startPoll({
+    pollTitle: title,
+    isYesNoPoll: false,
+    pollOptions: options,
+    showOptionNames: true,
+    countRecentVotes: true,
+  })
 }
 
 const stopPoll = () => {
@@ -172,7 +191,7 @@ const handleCommand = (command: string) => {
     if (items.length === 1) {
       startYesNoPoll(items[0])
     } else if (items.length > 1) {
-      startNamedPoll(items[0], items.slice(1))
+      startTextPoll(items[0], items.slice(1))
     }
   }
 }
