@@ -21,7 +21,7 @@
         }"
       >
         <div class="font-bold w-10 flex justify-center items-center bg-slate-50 leading-none p-px box-content">
-          {{ isYesNoPoll ? pollOptions[index] : index + 1 }}
+          {{ index + 1 }}
         </div>
         <div class="flex items-center bg-slate-400/60 relative flex-1 box-content">
           <div
@@ -67,7 +67,6 @@ import { ChatMessage } from "~/types/common"
 const VOTE_GRACE_PERIOD_MS = 5000
 
 const pollTitle = ref("")
-const isYesNoPoll = ref(false)
 const pollOptions = ref<string[]>([])
 const showOptionNames = ref(true)
 const votes = ref<Record<string, {
@@ -87,53 +86,40 @@ const totalVotes = computed(() => Object.keys(votes.value).length)
 
 const startPoll = (args: {
   pollTitle: string,
-  isYesNoPoll: boolean,
   pollOptions: string[],
   showOptionNames: boolean,
-  countRecentVotes: boolean,
 }) => {
   pollTitle.value = args.pollTitle
-  isYesNoPoll.value = args.isYesNoPoll
   pollOptions.value = args.pollOptions
   showOptionNames.value = args.showOptionNames
-  if (args.countRecentVotes) {
-    // filter previously cast votes by grace period and check if choice is in valid range
-    const now = Date.now()
-    votes.value = Object.fromEntries(Object.entries(votes.value).filter(([key, value]) => {
-      return (now - value.timestamp < VOTE_GRACE_PERIOD_MS) && (value.choice >= 1 && value.choice <= args.pollOptions.length)
-    }))
-  } else {
-    votes.value = {}
-  }
+  // filter previously cast votes by grace period and check if choice is in valid range
+  const now = Date.now()
+  votes.value = Object.fromEntries(Object.entries(votes.value).filter(([key, value]) => {
+    return (now - value.timestamp < VOTE_GRACE_PERIOD_MS) && (value.choice >= 1 && value.choice <= args.pollOptions.length)
+  }))
 }
 
 const startNumberPoll = (optionCount: number) => {
   startPoll({
     pollTitle: "",
-    isYesNoPoll: false,
     pollOptions: Array.from({ length: optionCount }, (_, i) => `${i + 1}`),
     showOptionNames: false,
-    countRecentVotes: true,
   })
 }
 
 const startYesNoPoll = (title: string) => {
   startPoll({
     pollTitle: title,
-    isYesNoPoll: true,
-    pollOptions: ["ja", "nein"],
-    showOptionNames: false,
-    countRecentVotes: false,
+    pollOptions: ["Ja", "Nein"],
+    showOptionNames: true,
   })
 }
 
 const startTextPoll = (title: string, options: string[]) => {
   startPoll({
     pollTitle: title,
-    isYesNoPoll: false,
     pollOptions: options,
     showOptionNames: true,
-    countRecentVotes: true,
   })
 }
 
@@ -141,7 +127,6 @@ const stopPoll = () => {
   pollOptions.value = []
   votes.value = {}
   pollTitle.value = ""
-  isYesNoPoll.value = false
 }
 
 const handleCommand = (command: string) => {
@@ -197,24 +182,15 @@ const handleCommand = (command: string) => {
 }
 
 const checkForChoice = (identifier: string, message: string) => {
-  if (isYesNoPoll.value) {
-    const yesNoChoice = message.match(/^(ja|nein)[ ,]?/i)?.[1].toLowerCase()
-    if (!yesNoChoice) return
-    votes.value[identifier] = {
-      choice: yesNoChoice === "ja" ? 1 : 2,
-      timestamp: Date.now()
-    }
-  } else {
-    const choice = message.match(/^(\d+)[ ,]?/i)?.[1]
-    if (!choice) return
-    const parsedChoice = parseInt(choice)
-    if (
-      pollOptions.value.length === 0 ||
+  const choice = message.match(/^(\d+)[ ,]?/i)?.[1]
+  if (!choice) return
+  const parsedChoice = parseInt(choice)
+  if (
+    pollOptions.value.length === 0 ||
       (parsedChoice >= 1 && parsedChoice <= pollOptions.value.length)) {
-      votes.value[identifier] = {
-        choice: parsedChoice,
-        timestamp: Date.now()
-      }
+    votes.value[identifier] = {
+      choice: parsedChoice,
+      timestamp: Date.now()
     }
   }
 }
