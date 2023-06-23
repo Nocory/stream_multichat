@@ -75,6 +75,9 @@ useWorker(subscriptions, {
   onAdd: messageBuffer.add,
   onRemove: messageBuffer.remove,
 })
+if (routeParams.autochat === "true") {
+  useAutoChat(messageBuffer)
+}
 const displayedMessages = useDisplayedMessages(messageBuffer)
 
 const visibleChat = computed(() => {
