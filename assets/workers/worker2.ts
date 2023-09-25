@@ -16,6 +16,8 @@ interface SharedWorkerGlobalScope {
 }
 const _self: SharedWorkerGlobalScope = self as any
 
+console.log("worker2")
+
 const workerId = Math.floor(Math.random() * 1000000)
 console.log(`WORKER(${workerId}) started`)
 

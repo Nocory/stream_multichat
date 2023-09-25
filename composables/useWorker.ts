@@ -1,6 +1,6 @@
 import { ChannelSubscription, ChatMessage, MessageRemovalOptions, MessageToClient } from "~/types/common"
 
-import MyWorker from "@/assets/workers/worker.ts?sharedworker"
+import MyWorker from "@/assets/workers/worker2.ts?sharedworker"
 
 const useWorker = (
   subscriptions: ChannelSubscription[],
