@@ -98,7 +98,7 @@ useIntervalFn(
         }
       })
       .then(redirectBranch => {
-        if (redirectBranch && process.env.NODE_ENV === "production") {
+        if (redirectBranch && redirectBranch.length >= 3 && process.env.NODE_ENV === "production") {
           window.location.assign(`https://${redirectBranch}--stream-multichat.netlify.app/${location.search}`)
         }
       })
