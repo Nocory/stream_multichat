@@ -48,6 +48,7 @@
 <script setup lang="ts">
 import { useIntervalFn, useUrlSearchParams } from "@vueuse/core"
 import useWorker from "~/composables/useWorker"
+import { ChatMessage } from "~/types/common"
 
 const router = useRouter()
 const params = useUrlSearchParams("history")
@@ -71,10 +72,36 @@ const showPlatformIcons = routeParams.forcePlatformIcons === "true" ||
   subscriptions.length > 1
 
 const messageBuffer = useMessageBuffer()
-useWorker(subscriptions, {
-  onAdd: messageBuffer.add,
+
+const approvedRedirects = ["master", "backup", "fix", "dev"]
+
+const handleMessage = (message: ChatMessage) => {
+  if ((message.userName === "itsConroy" || message.isHost || message.isModerator) &&
+    message.messageParts[0]?.type === "text") {
+    if (message.messageParts[0].value === "!reload") {
+      setTimeout(() => {
+        window.location.reload()
+      }, 1000)
+    }
+    if (message.messageParts[0].value.startsWith("!redirect")) {
+      const redirectBranch = message.messageParts[0].value.split(" ")[1]
+      if (approvedRedirects.includes(redirectBranch)) {
+        if (redirectBranch === "master") {
+          window.location.assign(`https://stream-multichat.netlify.app/${location.search}`)
+        } else if (redirectBranch && redirectBranch.length >= 3 && process.env.NODE_ENV === "production") {
+          window.location.assign(`https://${redirectBranch}--stream-multichat.netlify.app/${location.search}`)
+        }
+      }
+    }
+  }
+  messageBuffer.add(message)
+}
+
+const usedWorker = useWorker(subscriptions, {
+  onAdd: handleMessage,
   onRemove: messageBuffer.remove,
 })
+
 if (routeParams.autochat === "true") {
   useAutoChat(messageBuffer)
 }
