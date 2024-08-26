@@ -55,7 +55,10 @@ const useWorker = (
     worker.port.postMessage({ type: "subscribe", subscriptions })
   }
 
-  connectToWorker()
+  // call connectToWorker after a random amount of time to possibly fix duplicate twitch messages
+  setTimeout(() => {
+    connectToWorker()
+  }, Math.random() * 2000)
 
   onScopeDispose(() => {
     console.log("useWorker: onScopeDispose")
@@ -64,6 +67,8 @@ const useWorker = (
     worker?.port.close()
     worker = undefined
   })
+
+  return { connectToWorker }
 }
 
 export default useWorker

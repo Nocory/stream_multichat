@@ -102,11 +102,11 @@ const handleSubscription = (port: MessagePort, subscriptions: ChannelSubscriptio
     }
     portSubscriptions[platform][channel].ports.push(port)
     if (portSubscriptions[platform][channel].scope === undefined) {
-      // logger.debug(`= handleSubscription = Creating scope for ${platform}/${channel}`)
+      console.log(`WORKER(${workerId}) handleSubscription = Creating scope for ${platform}/${channel}`)
       const scope = effectScope()
       portSubscriptions[platform][channel].scope = scope
       scope.run(() => {
-        // logger.debug("scope.run", platform, channel)
+        console.log(`WORKER(${workerId}) scope.run`, platform, channel)
         switch (platform) {
           case "twitch":
             useTwitchChat(channel, {
