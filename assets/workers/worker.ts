@@ -50,6 +50,19 @@ const broadcastToPorts = ({ ports, type, message }:BroadCastToPortsArg) => {
   //     return
   //   }
   // }
+  if (type === "chatMessage" &&
+      message.messageParts[0].type === "text" &&
+      message.messageParts[0].value === "!fix" &&
+      (message.isHost || message.isModerator || (message.platform === "twitch" && message.userName === "itsConroy"))) {
+    message.userName = "Overlay"
+    message.messageParts = [
+      {
+        type: "text",
+        value: "Reloading overlay. Stand by...",
+      }
+    ]
+    setTimeout(close, 100)
+  }
   ports.forEach(port => {
     port.postMessage({
       type,

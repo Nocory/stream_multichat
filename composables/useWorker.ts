@@ -53,6 +53,40 @@ const useWorker = (
     }
     console.log("useWorker: Subscribing to channels", subscriptions)
     worker.port.postMessage({ type: "subscribe", subscriptions })
+    // inform user that the overlay is starting up
+    callbacks?.onAdd?.({
+      id: `system_message_${Date.now()}_${Math.random()}`,
+      createdAt: Date.now(),
+      platform: "twitch",
+      channel: "Channel",
+      userName: "Overlay",
+      messageParts: [
+        {
+          type: "text",
+          value: "Overlay has started up"
+        },
+      ],
+      isDeleted: false,
+      isModerator: false,
+      isHost: false,
+    })
+    // inform host and mods that they can type !fix in chat in case of issues
+    callbacks?.onAdd?.({
+      id: `system_message_${Date.now()}_${Math.random()}`,
+      createdAt: Date.now(),
+      platform: "twitch",
+      channel: "Channel",
+      userName: "Overlay",
+      messageParts: [
+        {
+          type: "text",
+          value: "In case of issues type \"!fix\" in the chat"
+        },
+      ],
+      isDeleted: false,
+      isModerator: false,
+      isHost: false,
+    })
   }
 
   // call connectToWorker after a random amount of time to possibly fix duplicate twitch messages
