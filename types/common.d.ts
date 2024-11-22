@@ -1,4 +1,4 @@
-export type StreamingPlatform = "twitch" | "kick" | "youtube"
+export type StreamingPlatform = "twitch" | "kick" | "youtube" | "x"
 
 export type MessagePart = {
   type: "text" | "image"

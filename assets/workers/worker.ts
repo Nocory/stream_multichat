@@ -3,6 +3,7 @@ import { reactive, watch, effectScope } from "vue"
 import useKickChat from "~/composables/platforms/useKickChat"
 import useRestream from "~/composables/platforms/useRestream"
 import useTwitchChat from "~/composables/platforms/useTwitchChat"
+import useXChat from "~/composables/platforms/useXChat"
 import {
   ChannelSubscription,
   ChatMessage,
@@ -28,6 +29,7 @@ const portSubscriptions : Record<StreamingPlatform, Record<string, {
   twitch: {},
   kick: {},
   youtube: {},
+  x: {},
 })
 
 type BroadCastToPortsArg =
@@ -51,9 +53,9 @@ const broadcastToPorts = ({ ports, type, message }:BroadCastToPortsArg) => {
   //   }
   // }
   if (type === "chatMessage" &&
-      message.messageParts[0].type === "text" &&
-      message.messageParts[0].value === "!fix" &&
-      (message.isHost || message.isModerator || (message.platform === "twitch" && message.userName === "itsConroy"))) {
+    message.messageParts[0].type === "text" &&
+    message.messageParts[0].value === "!fix" &&
+    (message.isHost || message.isModerator || (message.platform === "twitch" && message.userName === "itsConroy"))) {
     message.userName = "Overlay"
     message.messageParts = [
       {
@@ -63,6 +65,40 @@ const broadcastToPorts = ({ ports, type, message }:BroadCastToPortsArg) => {
     ]
     setTimeout(close, 100)
   }
+
+  if (
+    type === "chatMessage" &&
+    message.messageParts[0].type === "text" &&
+    message.messageParts[0].value.startsWith("!x ") &&
+    (message.isHost || message.isModerator || (message.platform === "twitch" && message.userName === "itsConroy"))
+  ) {
+    const messagePart = message.messageParts[0].value.split(" ")
+    const broadcastId = messagePart[messagePart.length - 1].trim()
+    useXChat(broadcastId, {
+      onAdd: msg => {
+        broadcastToPorts({
+          ports: portSubscriptions.x[broadcastId].ports,
+          type: "chatMessage",
+          message: msg,
+        })
+      },
+      onRemove: removalOptions => {
+        broadcastToPorts({
+          ports: portSubscriptions.x[broadcastId].ports,
+          type: "removedMessage",
+          message: removalOptions,
+        })
+      }
+    })
+    message.userName = "Overlay"
+    message.messageParts = [
+      {
+        type: "text",
+        value: "Adding X chat to overlay. Stand by...",
+      }
+    ]
+  }
+
   ports.forEach(port => {
     port.postMessage({
       type,
@@ -159,6 +195,24 @@ const handleSubscription = (port: MessagePort, subscriptions: ChannelSubscriptio
             break
           case "youtube":
             useRestream(channel, {
+              onAdd: message => {
+                broadcastToPorts({
+                  ports: portSubscriptions[platform][channel].ports,
+                  type: "chatMessage",
+                  message,
+                })
+              },
+              onRemove: removalOptions => {
+                broadcastToPorts({
+                  ports: portSubscriptions[platform][channel].ports,
+                  type: "removedMessage",
+                  message: removalOptions,
+                })
+              }
+            })
+            break
+          case "x":
+            useXChat(channel, {
               onAdd: message => {
                 broadcastToPorts({
                   ports: portSubscriptions[platform][channel].ports,
