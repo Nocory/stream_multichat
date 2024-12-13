@@ -3,7 +3,7 @@
     class="h-screen overflow-hidden"
   >
     <div v-if="raffleWord !== ''" class="flex flex-col">
-      <div>{{ totalParticipants }} Teilnehmer</div>
+      <div>{{ totalParticipants }} Participants</div>
       <div class="flex flex-wrap gap-4">
         <div
           v-for="(entry, index) in raffleParticipants"
@@ -21,7 +21,7 @@
       </div>
     </div>
     <div v-else-if="raffleWinner" class="flex flex-col">
-      <div>Gewinner:</div>
+      <div>Winner:</div>
       <div class="flex">
         <img
           class="multichat-message__platform h-5 w-5 object-contain mr-1 inline"
@@ -115,7 +115,7 @@ const simulateRaffleEntries = async () => {
       messageParts: [
         {
           type: "text",
-          value: "test",
+          value: raffleWord.value,
         }
       ],
       isDeleted: false,
