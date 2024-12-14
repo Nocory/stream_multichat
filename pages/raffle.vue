@@ -16,7 +16,10 @@
         Stop
       </button>
       <button class="ring" @click="areParticipantsVisible = true">
-        Show
+        Participants
+      </button>
+      <button class="ring" @click="areWinnersVisible = true">
+        Winners
       </button>
       <div>{{ totalParticipants }}</div>
     </div>
@@ -36,17 +39,20 @@
     </Transition>
     <Transition>
       <div
-        v-if="areParticipantsVisible && !recentWinner"
+        v-if="(areParticipantsVisible || areWinnersVisible) && !recentWinner"
         class="p-4"
         :class="recentWinner ? 'hidden' : ''"
       >
         <div class="flex flex-col gap-4 items-center">
-          <div class="bg-white text-slate-700 text-2xl font-bold ring ring-slate-700 px-4 py-2">
+          <div v-if="areParticipantsVisible" class="bg-white text-slate-700 text-2xl font-bold ring ring-slate-700 px-4 py-2">
             Raffle: "{{ raffleWord }}"
+          </div>
+          <div v-else-if="areWinnersVisible" class="bg-white text-slate-700 text-2xl font-bold ring ring-slate-700 px-4 py-2">
+            Winners
           </div>
           <div class="flex flex-wrap gap-2">
             <div
-              v-for="entry in raffleParticipants"
+              v-for="entry in areParticipantsVisible ? raffleParticipants : raffleWinners"
               :key="`${entry.platform}_${entry.userName}`"
               class="flex items-center bg-white px-2 ring-1 ring-slate-700"
             >
@@ -81,6 +87,7 @@ const raffleWord = ref("")
 const raffleWordFilter = ref<string[]>([])
 const recentWinner = refAutoReset<RaffleParticipant | null>(null, 10000)
 const areParticipantsVisible = refAutoReset(false, 10000)
+const areWinnersVisible = refAutoReset(false, 10000)
 
 const totalParticipants = computed(() => Object.keys(raffleParticipants.value).length)
 
@@ -133,6 +140,7 @@ const handleCommand = (command: string) => {
   // handle raffle reset
   if (command === "!raffle reset") {
     raffleParticipants.value = {}
+    raffleWinners.value = {}
     return
   }
 
@@ -141,6 +149,7 @@ const handleCommand = (command: string) => {
   if (disqualifiedWord?.length === 1) {
     raffleWordFilter.value.push(disqualifiedWord[0])
     raffleParticipants.value = Object.fromEntries(Object.entries(raffleParticipants.value).filter(([key, value]) => !value.userName.includes(disqualifiedWord[0])))
+    raffleWinners.value = Object.fromEntries(Object.entries(raffleWinners.value).filter(([key, value]) => !value.userName.includes(disqualifiedWord[0])))
     return
   }
 
@@ -151,13 +160,17 @@ const handleCommand = (command: string) => {
     return
   }
 
-  // handle raffle pick
   if (command === "!raffle pick") {
     pickWinner()
     return
   }
 
-  if (command === "!raffle show") {
+  if (command === "!raffle entries") {
+    areParticipantsVisible.value = true
+    return
+  }
+
+  if (command === "!raffle winners") {
     areParticipantsVisible.value = true
   }
 }
