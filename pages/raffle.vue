@@ -92,6 +92,7 @@ const areWinnersVisible = refAutoReset(false, 10000)
 const totalParticipants = computed(() => Object.keys(raffleParticipants.value).length)
 
 const location = useBrowserLocation()
+const urlParams = useUrlSearchParams()
 
 const startRaffle = (newRaffleWord: string) => {
   raffleParticipants.value = {}
@@ -110,12 +111,14 @@ const pickWinner = () => {
   recentWinner.value = raffleParticipants.value[winnerKey]
 
   delete raffleParticipants.value[winnerKey]
-  confetti({
-    particleCount: 60,
-    spread: 90,
-    startVelocity: 40,
-    origin: { y: 0.6 },
-  })
+  if (urlParams.confetti !== "false") {
+    confetti({
+      particleCount: 60,
+      spread: 90,
+      startVelocity: 40,
+      origin: { y: 0.6 },
+    })
+  }
 }
 
 const stopRaffle = () => {
