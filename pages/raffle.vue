@@ -174,7 +174,7 @@ const handleCommand = (command: string) => {
   }
 
   if (command === "!raffle winners") {
-    areParticipantsVisible.value = true
+    areWinnersVisible.value = true
   }
 }
 
