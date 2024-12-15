@@ -23,23 +23,21 @@
       </button>
       <div>{{ totalParticipants }}</div>
     </div>
-    <Transition>
+    <Transition mode="out-in">
       <div
         v-if="recentWinner"
-        class="flex items-center gap-2 bg-white rounded-full ring-1 ring-slate-700 ring-opacity-75 px-8 py-6 shadow-lg"
+        class="flex items-center gap-2 bg-white rounded-full ring-1 ring-slate-700 ring-opacity-75 px-8 py-6 shadow-lg max-w-[90vw]"
       >
         <img
           class="multichat-message__platform h-10 w-10 object-contain mr-1"
           :src="`/platforms/${recentWinner.platform}.png`"
         >
-        <div class="text-slate-700 text-3xl font-bold">
+        <div class="text-slate-700 text-3xl font-bold truncate">
           {{ recentWinner.userName }}
         </div>
       </div>
-    </Transition>
-    <Transition>
       <div
-        v-if="(areParticipantsVisible || areWinnersVisible) && !recentWinner"
+        v-else-if="(areParticipantsVisible || areWinnersVisible) && !recentWinner"
         class="p-4"
         :class="recentWinner ? 'hidden' : ''"
       >
@@ -50,17 +48,18 @@
           <div v-else-if="areWinnersVisible" class="bg-white text-slate-700 text-2xl font-bold ring ring-slate-700 px-4 py-2">
             Winners
           </div>
-          <div class="flex flex-wrap gap-2">
+          <div class="flex flex-wrap items-center gap-1">
             <div
               v-for="entry in areParticipantsVisible ? raffleParticipants : raffleWinners"
               :key="`${entry.platform}_${entry.userName}`"
-              class="flex items-center bg-white px-2 ring-1 ring-slate-700"
+              class="flex items-center bg-white p-1 ring-1 ring-slate-700"
+              :class="areParticipantsVisible ? 'max-w-[16rem]' : 'max-w-[80vw]'"
             >
               <img
                 class="multichat-message__platform h-5 w-5 object-contain mr-1 inline"
                 :src="`/platforms/${entry.platform}.png`"
               >
-              <div class="text-slate-700 text-xl font-bold ">
+              <div class="text-slate-700 font-bold truncate">
                 {{ entry.userName }}
               </div>
             </div>
@@ -108,6 +107,8 @@ const pickWinner = () => {
   const winnerKey = participantKeys[randomIndex]
 
   raffleWinners.value[winnerKey] = (raffleParticipants.value[winnerKey])
+  areParticipantsVisible.value = false
+  areWinnersVisible.value = true
   recentWinner.value = raffleParticipants.value[winnerKey]
 
   delete raffleParticipants.value[winnerKey]
@@ -169,11 +170,13 @@ const handleCommand = (command: string) => {
   }
 
   if (command === "!raffle entries") {
+    areWinnersVisible.value = false
     areParticipantsVisible.value = true
     return
   }
 
   if (command === "!raffle winners") {
+    areParticipantsVisible.value = false
     areWinnersVisible.value = true
   }
 }
@@ -198,13 +201,13 @@ const handleMessage = (message: ChatMessage) => {
 }
 
 const simulateRaffleEntries = async () => {
-  for (let i = 0; i < 150; i++) {
+  for (let i = 0; i < 250; i++) {
     handleMessage({
       id: "some_id",
       createdAt: 0,
       platform: "twitch",
       channel: "itsconroy",
-      userName: `User_${i}`,
+      userName: `Uuuuusssssseeeeerr_${i}`,
       messageParts: [
         {
           type: "text",
