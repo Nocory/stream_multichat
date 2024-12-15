@@ -158,19 +158,19 @@ const stopRaffle = () => {
 
 const handleCommand = (command: string) => {
   // handle raffle stop
-  if (command === "!raffle stop" || command === "!raffle end" || command === "!raffle ende") {
+  if (command.startsWith("!raffle stop") || command.startsWith("!raffle end")) {
     stopRaffle()
     return
   }
 
   // handle raffle simulation
-  if (command === "!raffle simulate") {
+  if (command.startsWith("!raffle simulate")) {
     simulateRaffleEntries()
     return
   }
 
   // handle raffle reset
-  if (command === "!raffle reset") {
+  if (command.startsWith("!raffle reset")) {
     raffleParticipants.value = {}
     raffleWinners.value = {}
     return
@@ -192,17 +192,17 @@ const handleCommand = (command: string) => {
     return
   }
 
-  if (command === "!raffle pick") {
+  if (command.startsWith("!raffle pick")) {
     pickWinner()
     return
   }
 
-  if (command === "!raffle entries" || command === "!raffle show" || command === "!raffle participants") {
+  if (command.startsWith("!raffle entries") || command.startsWith("!raffle show") || command.startsWith("!raffle participants")) {
     showParticipants()
     return
   }
 
-  if (command === "!raffle winners") {
+  if (command.startsWith("!raffle winners")) {
     showWinners()
   }
 }
