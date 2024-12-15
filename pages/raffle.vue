@@ -15,10 +15,10 @@
       <button class="ring" @click="stopRaffle">
         Stop
       </button>
-      <button class="ring" @click="areParticipantsVisible = true">
+      <button class="ring" @click="showParticipants">
         Participants
       </button>
-      <button class="ring" @click="areWinnersVisible = true">
+      <button class="ring" @click="showWinners">
         Winners
       </button>
       <div>{{ totalParticipants }}</div>
@@ -26,6 +26,7 @@
     <Transition mode="out-in">
       <div
         v-if="recentWinner"
+        :key="recentWinner?.userName"
         class="flex items-center gap-2 bg-white rounded-full ring-1 ring-slate-700 ring-opacity-75 px-8 py-6 shadow-lg max-w-[90vw]"
       >
         <img
@@ -38,14 +39,15 @@
       </div>
       <div
         v-else-if="(areParticipantsVisible || areWinnersVisible) && !recentWinner"
+        :key="areParticipantsVisible ? 'participants' : 'winners'"
         class="p-4"
         :class="recentWinner ? 'hidden' : ''"
       >
         <div class="flex flex-col gap-4 items-center">
-          <div v-if="areParticipantsVisible" class="bg-white text-slate-700 text-2xl font-bold ring ring-slate-700 px-4 py-2">
+          <div v-if="areParticipantsVisible" class="bg-white text-slate-700 text-2xl font-bold ring ring-slate-700 px-4 py-2 shadow-lg">
             Raffle: "{{ raffleWord }}"
           </div>
-          <div v-else-if="areWinnersVisible" class="bg-white text-slate-700 text-2xl font-bold ring ring-slate-700 px-4 py-2">
+          <div v-else-if="areWinnersVisible" class="bg-white text-slate-700 text-2xl font-bold ring ring-slate-700 px-4 py-2 shadow-lg">
             Winners
           </div>
           <div class="flex flex-wrap items-center gap-1">
@@ -66,6 +68,16 @@
           </div>
         </div>
       </div>
+      <div v-else-if="recentRaffleWord">
+        <div class="flex flex-col gap-2 items-center bg-white text-slate-700 text-2xl font-bold ring ring-slate-700 px-4 py-2 shadow-lg">
+          <div>
+            New Raffle
+          </div>
+          <div>
+            "{{ raffleWord }}"
+          </div>
+        </div>
+      </div>
     </Transition>
   </div>
 </template>
@@ -83,10 +95,14 @@ type RaffleParticipant = {
 const raffleParticipants = ref<Record<string, RaffleParticipant>>({})
 const raffleWinners = ref<Record<string, RaffleParticipant>>({})
 const raffleWord = ref("")
+const recentRaffleWord = refAutoReset("", 8000)
+watchEffect(() => {
+  recentRaffleWord.value = raffleWord.value
+})
 const raffleWordFilter = ref<string[]>([])
 const recentWinner = refAutoReset<RaffleParticipant | null>(null, 10000)
-const areParticipantsVisible = refAutoReset(false, 10000)
-const areWinnersVisible = refAutoReset(false, 10000)
+const areParticipantsVisible = ref(false)
+const areWinnersVisible = ref(false)
 
 const totalParticipants = computed(() => Object.keys(raffleParticipants.value).length)
 
@@ -108,18 +124,30 @@ const pickWinner = () => {
 
   raffleWinners.value[winnerKey] = (raffleParticipants.value[winnerKey])
   areParticipantsVisible.value = false
-  areWinnersVisible.value = true
+  areWinnersVisible.value = false
   recentWinner.value = raffleParticipants.value[winnerKey]
 
   delete raffleParticipants.value[winnerKey]
   if (urlParams.confetti !== "false") {
-    confetti({
-      particleCount: 60,
-      spread: 90,
-      startVelocity: 40,
-      origin: { y: 0.6 },
-    })
+    setTimeout(() => {
+      confetti({
+        particleCount: 60,
+        spread: 90,
+        startVelocity: 40,
+        origin: { y: 0.6 },
+      })
+    }, 200)
   }
+}
+
+const showParticipants = () => {
+  areWinnersVisible.value = false
+  areParticipantsVisible.value = !areParticipantsVisible.value
+}
+
+const showWinners = () => {
+  areParticipantsVisible.value = false
+  areWinnersVisible.value = !areWinnersVisible.value
 }
 
 const stopRaffle = () => {
@@ -169,15 +197,13 @@ const handleCommand = (command: string) => {
     return
   }
 
-  if (command === "!raffle entries") {
-    areWinnersVisible.value = false
-    areParticipantsVisible.value = true
+  if (command === "!raffle entries" || command === "!raffle show" || command === "!raffle participants") {
+    showParticipants()
     return
   }
 
   if (command === "!raffle winners") {
-    areParticipantsVisible.value = false
-    areWinnersVisible.value = true
+    showWinners()
   }
 }
 
@@ -201,7 +227,7 @@ const handleMessage = (message: ChatMessage) => {
 }
 
 const simulateRaffleEntries = async () => {
-  for (let i = 0; i < 250; i++) {
+  for (let i = 0; i < 200; i++) {
     handleMessage({
       id: "some_id",
       createdAt: 0,
