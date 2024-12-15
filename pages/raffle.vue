@@ -210,11 +210,11 @@ const handleCommand = (command: string) => {
 const handleMessage = (message: ChatMessage) => {
   if (message.messageParts[0]?.type !== "text") return
 
-  const messagePart = message.messageParts[0].value
+  const messagePart = message.messageParts[0].value.trim()
 
   if (messagePart.startsWith("!raffle") && (message.isHost || message.isModerator || message.userName === "itsConroy")) {
     handleCommand(messagePart)
-  } else if (raffleWord.value && messagePart.trim() === raffleWord.value) {
+  } else if (raffleWord.value && messagePart === raffleWord.value) {
     const raffleId = `${message.platform}_${message.userName}`
     if (raffleParticipants.value[raffleId]) return
     if (raffleWinners.value[raffleId]) return
