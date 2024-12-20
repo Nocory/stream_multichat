@@ -92,7 +92,7 @@ export default function(
     }
   }
 
-  const websocket = useWebSocket("wss://ws-us2.pusher.com/app/32cbd69e4b950bf97679?protocol=7&client=js&version=7.6.0&flash=false", {
+  const websocket = useWebSocket("wss://ws-us2.pusher.com/app/32cbd69e4b950bf97679?protocol=7&client=js&version=8.4.0-rc2&flash=false", {
     onConnected: socket => {
       try {
         handleConnected(socket)
