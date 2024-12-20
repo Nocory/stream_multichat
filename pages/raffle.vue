@@ -172,7 +172,6 @@ const handleCommand = (command: string) => {
   // handle raffle reset
   if (command.startsWith("!raffle reset")) {
     raffleParticipants.value = {}
-    raffleWinners.value = {}
     return
   }
 
